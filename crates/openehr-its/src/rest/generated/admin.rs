@@ -10,6 +10,7 @@
     clippy::pedantic,
     clippy::nursery,
     dead_code,
+    unused_imports,
     unused_variables,
     reason = "mechanically generated contract text: the OAS is emitted in full (every DTO, param struct and route, whether or not this workspace consumes it yet), so style and dead-code lints do not apply — the hand-written runtime and the implementing adapter carry the lint bar"
 )]
@@ -34,6 +35,7 @@ pub struct AdminEhrDeleteAllParams {
 /// defaults to returning `ApiError::NotImplemented`, so an implementor
 /// (the application service, or a test stub) overrides only the
 /// operations it supports.
+#[cfg(feature = "rest-server")]
 #[async_trait::async_trait]
 pub trait AdminApi {
     /// `DELETE /admin/ehr/{ehr_id}`
@@ -52,6 +54,108 @@ pub trait AdminApi {
     }
 }
 
+/// The client half of the `admin` API group (ITS-REST): one method per
+/// operation over a [`crate::rest::client::Client`], answering an outcome
+/// enum with one variant per status the OAS documents for it.
+#[cfg(feature = "rest-client")]
+pub mod client {
+    use super::*;
+
+    /// The outcome of `DELETE /admin/ehr/{ehr_id}`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum AdminEhrDeleteOutcome {
+        /// The `202` answer.
+        Accepted,
+        /// The `204` answer.
+        NoContent,
+        /// The `404` answer.
+        NotFound,
+    }
+
+    /// The outcome of `DELETE /admin/ehr/all{?ehr_id*}`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum AdminEhrDeleteAllOutcome {
+        /// The `202` answer.
+        Accepted,
+        /// The `204` answer.
+        NoContent,
+        /// The `404` answer.
+        NotFound,
+        /// The `405` answer.
+        MethodNotAllowed,
+    }
+
+    /// The `admin` API group over one configured CDR.
+    #[derive(Debug, Clone, Copy)]
+    pub struct AdminClient<'c, T> {
+        client: &'c crate::rest::client::Client<T>,
+    }
+
+    impl<'c, T: crate::rest::client::Transport> AdminClient<'c, T> {
+        /// The `admin` API group over `client`.
+        #[must_use]
+        pub fn new(client: &'c crate::rest::client::Client<T>) -> Self {
+            Self { client }
+        }
+
+        /// `DELETE /admin/ehr/{ehr_id}`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn admin_ehr_delete(
+            &self,
+            params: &AdminEhrDeleteParams,
+        ) -> Result<AdminEhrDeleteOutcome, crate::rest::client::ClientError> {
+            let request = crate::rest::client::Request::new(
+                http::Method::DELETE,
+                format!(
+                    "/admin/ehr/{}",
+                    crate::rest::client::path_segment(&params.ehr_id)
+                ),
+            );
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::ACCEPTED => Ok(AdminEhrDeleteOutcome::Accepted),
+                http::StatusCode::NO_CONTENT => Ok(AdminEhrDeleteOutcome::NoContent),
+                http::StatusCode::NOT_FOUND => Ok(AdminEhrDeleteOutcome::NotFound),
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `DELETE /admin/ehr/all{?ehr_id*}`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn admin_ehr_delete_all(
+            &self,
+            params: &AdminEhrDeleteAllParams,
+        ) -> Result<AdminEhrDeleteAllOutcome, crate::rest::client::ClientError> {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::DELETE,
+                String::from("/admin/ehr/all"),
+            );
+            if let Some(value) = params.ehr_id.as_ref() {
+                request.query("ehr_id", value);
+            }
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::ACCEPTED => Ok(AdminEhrDeleteAllOutcome::Accepted),
+                http::StatusCode::NO_CONTENT => Ok(AdminEhrDeleteAllOutcome::NoContent),
+                http::StatusCode::NOT_FOUND => Ok(AdminEhrDeleteAllOutcome::NotFound),
+                http::StatusCode::METHOD_NOT_ALLOWED => {
+                    Ok(AdminEhrDeleteAllOutcome::MethodNotAllowed)
+                }
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+    }
+}
 /// The operations of this group as `(method, path, operation_id)`, for
 /// wiring an axum router in `ferroehr-rest`.
 pub const ROUTES: &[(&str, &str, &str)] = &[

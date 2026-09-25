@@ -10,12 +10,13 @@
     clippy::pedantic,
     clippy::nursery,
     dead_code,
+    unused_imports,
     unused_variables,
     reason = "mechanically generated contract text: the OAS is emitted in full (every DTO, param struct and route, whether or not this workspace consumes it yet), so style and dead-code lints do not apply — the hand-written runtime and the implementing adapter carry the lint bar"
 )]
-#![expect(
+#![allow(
     clippy::disallowed_types,
-    reason = "adjudicated free-form JSON slots: serde_json::Value is workspace-banned (#1694); a generated carrier exists only where the spec leaves the slot open, and each adjudicated field's NOTE names its citation"
+    reason = "adjudicated free-form JSON slots: serde_json::Value is workspace-banned (#1694); a generated carrier exists only where the spec leaves the slot open — `allow`, not `expect`, because a carrier may sit inside a feature-gated region and fire only under that feature"
 )]
 use serde::{Deserialize, Serialize};
 
@@ -252,6 +253,7 @@ pub struct QueryExecuteStoredQueryVersionBodyParams {
 /// defaults to returning `ApiError::NotImplemented`, so an implementor
 /// (the application service, or a test stub) overrides only the
 /// operations it supports.
+#[cfg(feature = "rest-server")]
 #[async_trait::async_trait]
 pub trait QueryApi {
     /// `GET /query/aql`
@@ -301,6 +303,493 @@ pub trait QueryApi {
     }
 }
 
+/// The client half of the `query` API group (ITS-REST): one method per
+/// operation over a [`crate::rest::client::Client`], answering an outcome
+/// enum with one variant per status the OAS documents for it.
+#[cfg(feature = "rest-client")]
+pub mod client {
+    use super::*;
+
+    /// The response headers the OAS declares for the `200` answer of
+    /// `GET /query/aql`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct QueryExecuteAdhocQueryOkHeaders {
+        /// The `ETag` response header.
+        pub etag: Option<String>,
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+    }
+
+    /// The outcome of `GET /query/aql`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum QueryExecuteAdhocQueryOutcome {
+        /// The `200` answer.
+        Ok {
+            /// The body, decoded from canonical JSON.
+            body: ResultSet,
+            /// The response headers the OAS declares for this answer.
+            headers: QueryExecuteAdhocQueryOkHeaders,
+        },
+        /// The `400` answer.
+        BadRequest,
+        /// The `408` answer.
+        RequestTimeout,
+    }
+
+    /// The response headers the OAS declares for the `200` answer of
+    /// `POST /query/aql`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct QueryExecuteAdhocQueryBodyOkHeaders {
+        /// The `ETag` response header.
+        pub etag: Option<String>,
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+    }
+
+    /// The outcome of `POST /query/aql`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum QueryExecuteAdhocQueryBodyOutcome {
+        /// The `200` answer.
+        Ok {
+            /// The body, decoded from canonical JSON.
+            body: ResultSet,
+            /// The response headers the OAS declares for this answer.
+            headers: QueryExecuteAdhocQueryBodyOkHeaders,
+        },
+        /// The `400` answer.
+        BadRequest,
+        /// The `408` answer.
+        RequestTimeout,
+    }
+
+    /// The response headers the OAS declares for the `200` answer of
+    /// `GET /query/{qualified_query_name}`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct QueryExecuteStoredQueryOkHeaders {
+        /// The `ETag` response header.
+        pub etag: Option<String>,
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+    }
+
+    /// The outcome of `GET /query/{qualified_query_name}`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum QueryExecuteStoredQueryOutcome {
+        /// The `200` answer.
+        Ok {
+            /// The body, decoded from canonical JSON.
+            body: ResultSet,
+            /// The response headers the OAS declares for this answer.
+            headers: QueryExecuteStoredQueryOkHeaders,
+        },
+        /// The `400` answer.
+        BadRequest,
+        /// The `404` answer.
+        NotFound,
+        /// The `408` answer.
+        RequestTimeout,
+    }
+
+    /// The response headers the OAS declares for the `200` answer of
+    /// `POST /query/{qualified_query_name}`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct QueryExecuteStoredQueryBodyOkHeaders {
+        /// The `ETag` response header.
+        pub etag: Option<String>,
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+    }
+
+    /// The outcome of `POST /query/{qualified_query_name}`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum QueryExecuteStoredQueryBodyOutcome {
+        /// The `200` answer.
+        Ok {
+            /// The body, decoded from canonical JSON.
+            body: ResultSet,
+            /// The response headers the OAS declares for this answer.
+            headers: QueryExecuteStoredQueryBodyOkHeaders,
+        },
+        /// The `400` answer.
+        BadRequest,
+        /// The `404` answer.
+        NotFound,
+        /// The `408` answer.
+        RequestTimeout,
+    }
+
+    /// The response headers the OAS declares for the `200` answer of
+    /// `GET /query/{qualified_query_name}/{version}`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct QueryExecuteStoredQueryVersionOkHeaders {
+        /// The `ETag` response header.
+        pub etag: Option<String>,
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+    }
+
+    /// The outcome of `GET /query/{qualified_query_name}/{version}`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum QueryExecuteStoredQueryVersionOutcome {
+        /// The `200` answer.
+        Ok {
+            /// The body, decoded from canonical JSON.
+            body: ResultSet,
+            /// The response headers the OAS declares for this answer.
+            headers: QueryExecuteStoredQueryVersionOkHeaders,
+        },
+        /// The `400` answer.
+        BadRequest,
+        /// The `404` answer.
+        NotFound,
+        /// The `408` answer.
+        RequestTimeout,
+    }
+
+    /// The response headers the OAS declares for the `200` answer of
+    /// `POST /query/{qualified_query_name}/{version}`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct QueryExecuteStoredQueryVersionBodyOkHeaders {
+        /// The `ETag` response header.
+        pub etag: Option<String>,
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+    }
+
+    /// The outcome of `POST /query/{qualified_query_name}/{version}`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum QueryExecuteStoredQueryVersionBodyOutcome {
+        /// The `200` answer.
+        Ok {
+            /// The body, decoded from canonical JSON.
+            body: ResultSet,
+            /// The response headers the OAS declares for this answer.
+            headers: QueryExecuteStoredQueryVersionBodyOkHeaders,
+        },
+        /// The `400` answer.
+        BadRequest,
+        /// The `404` answer.
+        NotFound,
+        /// The `408` answer.
+        RequestTimeout,
+    }
+
+    /// The `query` API group over one configured CDR.
+    #[derive(Debug, Clone, Copy)]
+    pub struct QueryClient<'c, T> {
+        client: &'c crate::rest::client::Client<T>,
+    }
+
+    impl<'c, T: crate::rest::client::Transport> QueryClient<'c, T> {
+        /// The `query` API group over `client`.
+        #[must_use]
+        pub fn new(client: &'c crate::rest::client::Client<T>) -> Self {
+            Self { client }
+        }
+
+        /// `GET /query/aql`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn query_execute_adhoc_query(
+            &self,
+            params: &QueryExecuteAdhocQueryParams,
+        ) -> Result<QueryExecuteAdhocQueryOutcome, crate::rest::client::ClientError> {
+            let mut request =
+                crate::rest::client::Request::new(http::Method::GET, String::from("/query/aql"));
+            {
+                let value = &params.q;
+                request.query("q", value);
+            }
+            if let Some(value) = params.ehr_id.as_ref() {
+                request.query("ehr_id", value);
+            }
+            if let Some(value) = params.offset.as_ref() {
+                request.query("offset", value);
+            }
+            if let Some(value) = params.fetch.as_ref() {
+                request.query("fetch", value);
+            }
+            if let Some(value) = params.query_parameters.as_ref() {
+                for (member, item) in value {
+                    match item {
+                        serde_json::Value::String(text) => request.query(member, text),
+                        other => request.query(member, other),
+                    }
+                }
+            }
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::OK => Ok(QueryExecuteAdhocQueryOutcome::Ok {
+                    body: answer.json()?,
+                    headers: QueryExecuteAdhocQueryOkHeaders {
+                        etag: answer.header("ETag"),
+                        content_type: answer.header("Content-Type"),
+                    },
+                }),
+                http::StatusCode::BAD_REQUEST => Ok(QueryExecuteAdhocQueryOutcome::BadRequest),
+                http::StatusCode::REQUEST_TIMEOUT => {
+                    Ok(QueryExecuteAdhocQueryOutcome::RequestTimeout)
+                }
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `POST /query/aql`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn query_execute_adhoc_query_body(
+            &self,
+            params: &QueryExecuteAdhocQueryBodyParams,
+            body: &AdhocQueryExecute,
+        ) -> Result<QueryExecuteAdhocQueryBodyOutcome, crate::rest::client::ClientError> {
+            let mut request =
+                crate::rest::client::Request::new(http::Method::POST, String::from("/query/aql"));
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            if let Some(value) = params.content_type.as_ref() {
+                request.header("Content-Type", &value.to_string())?;
+            }
+            request.json_body(body, params.content_type.as_deref())?;
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::OK => Ok(QueryExecuteAdhocQueryBodyOutcome::Ok {
+                    body: answer.json()?,
+                    headers: QueryExecuteAdhocQueryBodyOkHeaders {
+                        etag: answer.header("ETag"),
+                        content_type: answer.header("Content-Type"),
+                    },
+                }),
+                http::StatusCode::BAD_REQUEST => Ok(QueryExecuteAdhocQueryBodyOutcome::BadRequest),
+                http::StatusCode::REQUEST_TIMEOUT => {
+                    Ok(QueryExecuteAdhocQueryBodyOutcome::RequestTimeout)
+                }
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `GET /query/{qualified_query_name}`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn query_execute_stored_query(
+            &self,
+            params: &QueryExecuteStoredQueryParams,
+        ) -> Result<QueryExecuteStoredQueryOutcome, crate::rest::client::ClientError> {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::GET,
+                format!(
+                    "/query/{}",
+                    crate::rest::client::path_segment(&params.qualified_query_name)
+                ),
+            );
+            if let Some(value) = params.ehr_id.as_ref() {
+                request.query("ehr_id", value);
+            }
+            if let Some(value) = params.offset.as_ref() {
+                request.query("offset", value);
+            }
+            if let Some(value) = params.fetch.as_ref() {
+                request.query("fetch", value);
+            }
+            if let Some(value) = params.query_parameters.as_ref() {
+                for (member, item) in value {
+                    match item {
+                        serde_json::Value::String(text) => request.query(member, text),
+                        other => request.query(member, other),
+                    }
+                }
+            }
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::OK => Ok(QueryExecuteStoredQueryOutcome::Ok {
+                    body: answer.json()?,
+                    headers: QueryExecuteStoredQueryOkHeaders {
+                        etag: answer.header("ETag"),
+                        content_type: answer.header("Content-Type"),
+                    },
+                }),
+                http::StatusCode::BAD_REQUEST => Ok(QueryExecuteStoredQueryOutcome::BadRequest),
+                http::StatusCode::NOT_FOUND => Ok(QueryExecuteStoredQueryOutcome::NotFound),
+                http::StatusCode::REQUEST_TIMEOUT => {
+                    Ok(QueryExecuteStoredQueryOutcome::RequestTimeout)
+                }
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `POST /query/{qualified_query_name}`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn query_execute_stored_query_body(
+            &self,
+            params: &QueryExecuteStoredQueryBodyParams,
+            body: &Query,
+        ) -> Result<QueryExecuteStoredQueryBodyOutcome, crate::rest::client::ClientError> {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::POST,
+                format!(
+                    "/query/{}",
+                    crate::rest::client::path_segment(&params.qualified_query_name)
+                ),
+            );
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            if let Some(value) = params.content_type.as_ref() {
+                request.header("Content-Type", &value.to_string())?;
+            }
+            request.json_body(body, params.content_type.as_deref())?;
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::OK => Ok(QueryExecuteStoredQueryBodyOutcome::Ok {
+                    body: answer.json()?,
+                    headers: QueryExecuteStoredQueryBodyOkHeaders {
+                        etag: answer.header("ETag"),
+                        content_type: answer.header("Content-Type"),
+                    },
+                }),
+                http::StatusCode::BAD_REQUEST => Ok(QueryExecuteStoredQueryBodyOutcome::BadRequest),
+                http::StatusCode::NOT_FOUND => Ok(QueryExecuteStoredQueryBodyOutcome::NotFound),
+                http::StatusCode::REQUEST_TIMEOUT => {
+                    Ok(QueryExecuteStoredQueryBodyOutcome::RequestTimeout)
+                }
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `GET /query/{qualified_query_name}/{version}`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn query_execute_stored_query_version(
+            &self,
+            params: &QueryExecuteStoredQueryVersionParams,
+        ) -> Result<QueryExecuteStoredQueryVersionOutcome, crate::rest::client::ClientError>
+        {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::GET,
+                format!(
+                    "/query/{}/{}",
+                    crate::rest::client::path_segment(&params.qualified_query_name),
+                    crate::rest::client::path_segment(&params.version)
+                ),
+            );
+            if let Some(value) = params.ehr_id.as_ref() {
+                request.query("ehr_id", value);
+            }
+            if let Some(value) = params.offset.as_ref() {
+                request.query("offset", value);
+            }
+            if let Some(value) = params.fetch.as_ref() {
+                request.query("fetch", value);
+            }
+            if let Some(value) = params.query_parameters.as_ref() {
+                for (member, item) in value {
+                    match item {
+                        serde_json::Value::String(text) => request.query(member, text),
+                        other => request.query(member, other),
+                    }
+                }
+            }
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::OK => Ok(QueryExecuteStoredQueryVersionOutcome::Ok {
+                    body: answer.json()?,
+                    headers: QueryExecuteStoredQueryVersionOkHeaders {
+                        etag: answer.header("ETag"),
+                        content_type: answer.header("Content-Type"),
+                    },
+                }),
+                http::StatusCode::BAD_REQUEST => {
+                    Ok(QueryExecuteStoredQueryVersionOutcome::BadRequest)
+                }
+                http::StatusCode::NOT_FOUND => Ok(QueryExecuteStoredQueryVersionOutcome::NotFound),
+                http::StatusCode::REQUEST_TIMEOUT => {
+                    Ok(QueryExecuteStoredQueryVersionOutcome::RequestTimeout)
+                }
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `POST /query/{qualified_query_name}/{version}`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn query_execute_stored_query_version_body(
+            &self,
+            params: &QueryExecuteStoredQueryVersionBodyParams,
+            body: &Query,
+        ) -> Result<QueryExecuteStoredQueryVersionBodyOutcome, crate::rest::client::ClientError>
+        {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::POST,
+                format!(
+                    "/query/{}/{}",
+                    crate::rest::client::path_segment(&params.qualified_query_name),
+                    crate::rest::client::path_segment(&params.version)
+                ),
+            );
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            if let Some(value) = params.content_type.as_ref() {
+                request.header("Content-Type", &value.to_string())?;
+            }
+            request.json_body(body, params.content_type.as_deref())?;
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::OK => Ok(QueryExecuteStoredQueryVersionBodyOutcome::Ok {
+                    body: answer.json()?,
+                    headers: QueryExecuteStoredQueryVersionBodyOkHeaders {
+                        etag: answer.header("ETag"),
+                        content_type: answer.header("Content-Type"),
+                    },
+                }),
+                http::StatusCode::BAD_REQUEST => {
+                    Ok(QueryExecuteStoredQueryVersionBodyOutcome::BadRequest)
+                }
+                http::StatusCode::NOT_FOUND => {
+                    Ok(QueryExecuteStoredQueryVersionBodyOutcome::NotFound)
+                }
+                http::StatusCode::REQUEST_TIMEOUT => {
+                    Ok(QueryExecuteStoredQueryVersionBodyOutcome::RequestTimeout)
+                }
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+    }
+}
 /// The operations of this group as `(method, path, operation_id)`, for
 /// wiring an axum router in `ferroehr-rest`.
 pub const ROUTES: &[(&str, &str, &str)] = &[

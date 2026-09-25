@@ -232,6 +232,190 @@ fn emit_rest_matches_the_committed_tree() {
     assert_matches_committed_tree("emit-rest", &files);
 }
 
+/// Every API group gates exactly one server trait and exactly one client module.
+///
+/// The two halves ride separate features (`rest-server`, `rest-client`), so a
+/// second gate, or a half emitted outside its gate, would compile a half into a
+/// consumer that did not ask for it.
+#[test]
+fn every_rest_group_gates_one_server_trait_and_one_client_module() {
+    let files = testsupport::emit_rest_to_memory().unwrap();
+    for group in REST_GROUPS {
+        let Some(text) = rest_group(&files, group) else {
+            panic!("emit-rest: the {group} group was not rendered");
+        };
+        assert_eq!(
+            text.matches("#[cfg(feature = \"rest-server\")]").count(),
+            1,
+            "emit-rest: {group} must gate exactly one item on rest-server",
+        );
+        assert_eq!(
+            text.matches(
+                "#[cfg(feature = \"rest-server\")]\n#[async_trait::async_trait]\npub trait "
+            )
+            .count(),
+            1,
+            "emit-rest: {group}'s rest-server gate must sit on its server trait",
+        );
+        assert_eq!(
+            text.matches("#[cfg(feature = \"rest-client\")]").count(),
+            1,
+            "emit-rest: {group} must gate exactly one item on rest-client",
+        );
+        assert_eq!(
+            text.matches(CLIENT_GATE).count(),
+            1,
+            "emit-rest: {group}'s rest-client gate must sit on its `pub mod client`",
+        );
+    }
+}
+
+/// Every operation of a group has one outcome enum and one client method.
+///
+/// The route table lists the group's operations as the OAS declares them, so
+/// the outcome enums and the client methods are counted against it: an
+/// operation the client half skipped would leave the counts apart.
+#[test]
+fn every_rest_operation_has_one_outcome_and_one_client_method() {
+    let files = testsupport::emit_rest_to_memory().unwrap();
+    for group in REST_GROUPS {
+        let Some(text) = rest_group(&files, group) else {
+            panic!("emit-rest: the {group} group was not rendered");
+        };
+        let Some(client) = client_module(text) else {
+            panic!("emit-rest: {group} renders no client module ahead of its route table");
+        };
+        let Some(routes) = route_count(text) else {
+            panic!("emit-rest: {group} renders no route table");
+        };
+        let outcomes = client
+            .lines()
+            .map(str::trim_start)
+            .filter(|line| line.starts_with("pub enum ") && line.ends_with("Outcome {"))
+            .count();
+        let methods = client.matches("pub async fn ").count();
+        assert!(routes > 0, "emit-rest: {group} declares no operations");
+        assert_eq!(
+            outcomes, routes,
+            "emit-rest: {group} has {outcomes} outcome enums for {routes} operations",
+        );
+        assert_eq!(
+            methods, routes,
+            "emit-rest: {group} has {methods} client methods for {routes} operations",
+        );
+    }
+}
+
+/// Every documented response is an outcome variant the client method matches.
+///
+/// Each variant carries a ``/// The `NNN` answer.`` doc line and each client
+/// method one `http::StatusCode::` arm per variant, so the two counts agree
+/// exactly when no documented status was dropped from either side. A status the
+/// emitter's table does not name renders as `UnregisteredStatus`, which must
+/// never reach the committed contract.
+#[test]
+fn every_documented_rest_response_is_a_matched_variant() {
+    let files = testsupport::emit_rest_to_memory().unwrap();
+    for group in REST_GROUPS {
+        let Some(text) = rest_group(&files, group) else {
+            panic!("emit-rest: the {group} group was not rendered");
+        };
+        let Some(client) = client_module(text) else {
+            panic!("emit-rest: {group} renders no client module ahead of its route table");
+        };
+        let answers = client
+            .lines()
+            .filter(|line| is_answer_doc(line.trim()))
+            .count();
+        let arms = client.matches("http::StatusCode::").count();
+        assert!(answers > 0, "emit-rest: {group} documents no answer");
+        assert_eq!(
+            answers, arms,
+            "emit-rest: {group} documents {answers} answers but matches {arms} statuses",
+        );
+        assert!(
+            !text.contains("UnregisteredStatus") && !text.contains("UNREGISTERED_"),
+            "emit-rest: {group} carries a status outside the emitter's status table",
+        );
+    }
+}
+
+/// The client module reaches the hoisted shared types one module level up.
+///
+/// The hoisted schemas live in `generated::common`, a sibling of the group
+/// module; the client module sits one level below the group, so every
+/// reference it makes is `super::super::common::`, never `super::common::`.
+#[test]
+fn rest_client_modules_reach_hoisted_types_through_super_super() {
+    let files = testsupport::emit_rest_to_memory().unwrap();
+    let mut hoisted = 0_usize;
+    for group in REST_GROUPS {
+        let Some(text) = rest_group(&files, group) else {
+            panic!("emit-rest: the {group} group was not rendered");
+        };
+        let Some(client) = client_module(text) else {
+            panic!("emit-rest: {group} renders no client module ahead of its route table");
+        };
+        for (at, _) in client.match_indices("super::common::") {
+            assert!(
+                client
+                    .get(..at)
+                    .is_some_and(|before| before.ends_with("super::")),
+                "emit-rest: {group}'s client module names `super::common::` at byte {at}",
+            );
+            hoisted += 1;
+        }
+    }
+    assert!(
+        hoisted > 0,
+        "emit-rest: no client module references a hoisted type, so the property is vacuous",
+    );
+}
+
+/// The ITS-REST API groups, one generated module each.
+const REST_GROUPS: &[&str] = &[
+    "admin",
+    "definition",
+    "demographic",
+    "ehr",
+    "query",
+    "system",
+];
+
+/// The feature gate and header of a group's client module, as the emitter
+/// writes them.
+const CLIENT_GATE: &str = "#[cfg(feature = \"rest-client\")]\npub mod client {";
+
+/// The rendered module of API group `group`.
+fn rest_group<'a>(files: &'a BTreeMap<String, String>, group: &str) -> Option<&'a str> {
+    files
+        .get(&format!("openehr-its/src/rest/generated/{group}.rs"))
+        .map(String::as_str)
+}
+
+/// The client module of a rendered group: from its feature gate up to the route
+/// table the emitter writes after it.
+fn client_module(text: &str) -> Option<&str> {
+    let start = text.find(CLIENT_GATE)?;
+    let end = text.find("pub const ROUTES")?;
+    text.get(start..end)
+}
+
+/// The number of `(method, path, operation_id)` entries in a group's `ROUTES`.
+fn route_count(text: &str) -> Option<usize> {
+    let table = text.get(text.find("pub const ROUTES")?..)?;
+    let entries = table.get(table.find("= &[")?..table.find("];")?)?;
+    Some(entries.matches("(\"").count())
+}
+
+/// Whether `line` is the ``/// The `NNN` answer.`` doc line of an outcome
+/// variant.
+fn is_answer_doc(line: &str) -> bool {
+    line.strip_prefix("/// The `")
+        .and_then(|rest| rest.strip_suffix("` answer."))
+        .is_some_and(|code| code.len() == 3 && code.bytes().all(|b| b.is_ascii_digit()))
+}
+
 // ── emit-opt ────────────────────────────────────────────────────────────────
 
 /// Rendering the OPT 1.4 model twice yields byte-identical output.

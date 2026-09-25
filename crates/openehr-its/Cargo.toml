@@ -1,6 +1,6 @@
 [package]
 name = "openehr-its"
-version = "0.0.70"
+version = "0.0.71"
 description = "openEHR ITS (Implementation Technology Specifications): canonical JSON + canonical XML serialization of the RM, the generated ITS-REST 1.1.0 API contract, and the OPT 1.4 and AOM2 archetype XML codecs"
 edition.workspace = true
 rust-version.workspace = true
@@ -31,16 +31,24 @@ indexmap = { workspace = true, optional = true }
 async-trait = { workspace = true, optional = true }
 axum = { workspace = true, optional = true }
 http = { workspace = true, optional = true }
+# The ITS-REST client runtime: the shipped `reqwest` engine, the base URL,
+# percent-encoding of path and query parameters, HTTP Basic, and the retry
+# budget over idempotent requests.
+reqwest = { workspace = true, optional = true }
+url = { workspace = true, optional = true }
+urlencoding = { workspace = true, optional = true }
+base64 = { workspace = true, optional = true }
+backon = { workspace = true, optional = true }
 # The generated XML (de)serializers impl the crate's ToXml/FromXml traits for the
 # RM/BASE spec types, so these are real (non-dev) deps.
-openehr-base = { path = "../openehr-base", version = "0.0.70", optional = true }
-openehr-rm = { path = "../openehr-rm", version = "0.0.70", optional = true }
+openehr-base = { path = "../openehr-base", version = "0.0.71", optional = true }
+openehr-rm = { path = "../openehr-rm", version = "0.0.71", optional = true }
 # The native canonical-JSON codec (`json_codec/generated`, emit-json) implements
 # `ToJson` for EVERY generated spec type the `OpenEhrType` derive covers, so it
 # spans all five spec crates (not just the RM/BASE the XML codec needs).
-openehr-lang = { path = "../openehr-lang", version = "0.0.70", optional = true }
-openehr-am = { path = "../openehr-am", version = "0.0.70", optional = true }
-openehr-term = { path = "../openehr-term", version = "0.0.70", optional = true }
+openehr-lang = { path = "../openehr-lang", version = "0.0.71", optional = true }
+openehr-am = { path = "../openehr-am", version = "0.0.71", optional = true }
+openehr-term = { path = "../openehr-term", version = "0.0.71", optional = true }
 
 # The graph is layered so a consumer takes only the surfaces it reads, and so
 # the openEHR content layers stay free of anything that needs a native platform.
@@ -52,10 +60,12 @@ openehr-term = { path = "../openehr-term", version = "0.0.70", optional = true }
 # 1.4. The wasm selection is checked, not claimed: CI clippies the crate for
 # that target on every code change.
 #
-# Two layers stay OUT of that selection, each for its dependency:
+# Three layers stay OUT of that selection, each for its dependency:
 # `schema-validation` adds `jsonschema` and compiles in the 631 KiB vendored
-# ITS-JSON RM schema; `rest-server` adds `axum` + `http` — the SERVER half of
-# the ITS-REST contract, which a REST client never implements.
+# ITS-JSON RM schema; `rest-server` adds `axum` — the SERVER half of the
+# ITS-REST contract, which a REST client never implements; `rest-client` adds
+# `reqwest` — the CLIENT half. Both sit on `rest`, the contract itself (DTOs,
+# param structs, route tables) over serde and `http` alone.
 [features]
 default = ["full"]
 full = [
@@ -64,6 +74,7 @@ full = [
     "json",
     "schema-validation",
     "rest-server",
+    "rest-client",
 ]
 
 # Canonical JSON (`json`, `json_codec`, `wire_validate`) over the five
@@ -88,12 +99,30 @@ opt14 = ["xml"]
 # Validation against the compiled-in vendored ITS-JSON RM schema
 # (`json::validate_canonical`) — the crate's only `jsonschema` user.
 schema-validation = ["json", "dep:jsonschema"]
-# The generated ITS-REST contract (`rest::generated`) and its response runtime
-# (`rest::runtime`): server traits, DTOs and route tables.
-rest-server = ["json", "dep:axum", "dep:http", "dep:async-trait"]
+# The generated ITS-REST contract shared by both halves (`rest::generated`:
+# DTOs, per-operation param structs, route tables) and the `ApiError` type
+# (`rest::runtime`) — serde + `http`, never an HTTP engine.
+rest = ["json", "dep:http"]
+# The SERVER half: the per-group `#[async_trait]` server traits and the axum
+# response mapping of `ApiError`.
+rest-server = ["rest", "dep:axum", "dep:async-trait"]
+# The CLIENT half: the per-group generated clients (`rest::generated::<group>::client`)
+# over the hand-written runtime (`rest::client`: the `Transport` seam, the
+# `reqwest` engine, credentials, the retry budget, the typed errors).
+rest-client = [
+    "rest",
+    "dep:async-trait",
+    "dep:reqwest",
+    "dep:url",
+    "dep:urlencoding",
+    "dep:base64",
+    "dep:backon",
+]
 
 [dev-dependencies]
 serde_json.workspace = true
+tokio = { workspace = true }      # the async runtime the client contract tests run on
+wiremock.workspace = true         # the ITS-REST client contract tests: one mock per documented response shape
 insta.workspace = true   # canonical-output determinism snapshots (the contract gate)
 testkit = { path = "../../tools/testkit" }   # the shared canonical-json-literals gate scanner (path-only: stripped at packaging)
 sha2.workspace = true    # corpus manifest hashing for the determinism gate

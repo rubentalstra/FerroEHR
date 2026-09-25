@@ -10,12 +10,13 @@
     clippy::pedantic,
     clippy::nursery,
     dead_code,
+    unused_imports,
     unused_variables,
     reason = "mechanically generated contract text: the OAS is emitted in full (every DTO, param struct and route, whether or not this workspace consumes it yet), so style and dead-code lints do not apply — the hand-written runtime and the implementing adapter carry the lint bar"
 )]
-#![expect(
+#![allow(
     clippy::disallowed_types,
-    reason = "adjudicated free-form JSON slots: serde_json::Value is workspace-banned (#1694); a generated carrier exists only where the spec leaves the slot open, and each adjudicated field's NOTE names its citation"
+    reason = "adjudicated free-form JSON slots: serde_json::Value is workspace-banned (#1694); a generated carrier exists only where the spec leaves the slot open — `allow`, not `expect`, because a carrier may sit inside a feature-gated region and fire only under that feature"
 )]
 use serde::{Deserialize, Serialize};
 
@@ -951,6 +952,7 @@ pub struct DefinitionQueryVersionStoreYamlParams {
 /// defaults to returning `ApiError::NotImplemented`, so an implementor
 /// (the application service, or a test stub) overrides only the
 /// operations it supports.
+#[cfg(feature = "rest-server")]
 #[async_trait::async_trait]
 pub trait DefinitionApi {
     /// `GET /definition/template/adl1.4`
@@ -1050,6 +1052,984 @@ pub trait DefinitionApi {
     }
 }
 
+/// The client half of the `definition` API group (ITS-REST): one method per
+/// operation over a [`crate::rest::client::Client`], answering an outcome
+/// enum with one variant per status the OAS documents for it.
+#[cfg(feature = "rest-client")]
+pub mod client {
+    use super::*;
+
+    /// The response headers the OAS declares for the `200` answer of
+    /// `GET /definition/template/adl1.4`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct DefinitionTemplateAdl14ListOkHeaders {
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+    }
+
+    /// The outcome of `GET /definition/template/adl1.4`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum DefinitionTemplateAdl14ListOutcome {
+        /// The `200` answer.
+        Ok {
+            /// The body, decoded from canonical JSON.
+            body: TemplateList,
+            /// The response headers the OAS declares for this answer.
+            headers: DefinitionTemplateAdl14ListOkHeaders,
+        },
+    }
+
+    /// The response headers the OAS declares for the `201` answer of
+    /// `POST /definition/template/adl1.4`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct DefinitionTemplateAdl14UploadCreatedHeaders {
+        /// The `Location` response header.
+        pub location: Option<String>,
+        /// The `ETag` response header.
+        pub etag: Option<String>,
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+    }
+
+    /// The response headers the OAS declares for the `204` answer of
+    /// `POST /definition/template/adl1.4`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct DefinitionTemplateAdl14UploadNoContentHeaders {
+        /// The `Location` response header.
+        pub location: Option<String>,
+        /// The `ETag` response header.
+        pub etag: Option<String>,
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+    }
+
+    /// The outcome of `POST /definition/template/adl1.4`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum DefinitionTemplateAdl14UploadOutcome {
+        /// The `201` answer.
+        Created {
+            /// The body as received; the request `Accept` selected its form and the `Content-Type` response header names it.
+            body: Vec<u8>,
+            /// The response headers the OAS declares for this answer.
+            headers: DefinitionTemplateAdl14UploadCreatedHeaders,
+        },
+        /// The `204` answer.
+        NoContent {
+            /// The response headers the OAS declares for this answer.
+            headers: DefinitionTemplateAdl14UploadNoContentHeaders,
+        },
+        /// The `400` answer.
+        BadRequest {
+            /// The body, decoded from canonical JSON; `None` when the service sent none.
+            body: Option<super::super::common::Error>,
+        },
+        /// The `409` answer.
+        Conflict,
+    }
+
+    /// The response headers the OAS declares for the `200` answer of
+    /// `GET /definition/template/adl1.4/{template_id}`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct DefinitionTemplateAdl14GetOkHeaders {
+        /// The `ETag` response header.
+        pub etag: Option<String>,
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+    }
+
+    /// The outcome of `GET /definition/template/adl1.4/{template_id}`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum DefinitionTemplateAdl14GetOutcome {
+        /// The `200` answer.
+        Ok {
+            /// The body as received; the request `Accept` selected its form and the `Content-Type` response header names it.
+            body: Vec<u8>,
+            /// The response headers the OAS declares for this answer.
+            headers: DefinitionTemplateAdl14GetOkHeaders,
+        },
+        /// The `400` answer.
+        BadRequest {
+            /// The body, decoded from canonical JSON; `None` when the service sent none.
+            body: Option<super::super::common::Error>,
+        },
+        /// The `404` answer.
+        NotFound,
+        /// The `406` answer.
+        NotAcceptable,
+    }
+
+    /// The response headers the OAS declares for the `200` answer of
+    /// `GET /definition/template/adl1.4/{template_id}/example`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct DefinitionTemplateAdl14ExampleGetOkHeaders {
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+    }
+
+    /// The outcome of `GET /definition/template/adl1.4/{template_id}/example`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum DefinitionTemplateAdl14ExampleGetOutcome {
+        /// The `200` answer.
+        Ok {
+            /// The body, decoded from canonical JSON.
+            body: serde_json::Value,
+            /// The response headers the OAS declares for this answer.
+            headers: DefinitionTemplateAdl14ExampleGetOkHeaders,
+        },
+        /// The `400` answer.
+        BadRequest {
+            /// The body, decoded from canonical JSON; `None` when the service sent none.
+            body: Option<super::super::common::Error>,
+        },
+        /// The `404` answer.
+        NotFound,
+        /// The `406` answer.
+        NotAcceptable,
+    }
+
+    /// The response headers the OAS declares for the `200` answer of
+    /// `GET /definition/template/adl2`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct DefinitionTemplateAdl2ListOkHeaders {
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+    }
+
+    /// The outcome of `GET /definition/template/adl2`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum DefinitionTemplateAdl2ListOutcome {
+        /// The `200` answer.
+        Ok {
+            /// The body, decoded from canonical JSON.
+            body: TemplateList,
+            /// The response headers the OAS declares for this answer.
+            headers: DefinitionTemplateAdl2ListOkHeaders,
+        },
+    }
+
+    /// The response headers the OAS declares for the `201` answer of
+    /// `POST /definition/template/adl2`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct DefinitionTemplateAdl2UploadCreatedHeaders {
+        /// The `Location` response header.
+        pub location: Option<String>,
+        /// The `ETag` response header.
+        pub etag: Option<String>,
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+    }
+
+    /// The response headers the OAS declares for the `204` answer of
+    /// `POST /definition/template/adl2`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct DefinitionTemplateAdl2UploadNoContentHeaders {
+        /// The `Location` response header.
+        pub location: Option<String>,
+        /// The `ETag` response header.
+        pub etag: Option<String>,
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+    }
+
+    /// The outcome of `POST /definition/template/adl2`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum DefinitionTemplateAdl2UploadOutcome {
+        /// The `201` answer.
+        Created {
+            /// The body as received; the request `Accept` selected its form and the `Content-Type` response header names it.
+            body: Vec<u8>,
+            /// The response headers the OAS declares for this answer.
+            headers: DefinitionTemplateAdl2UploadCreatedHeaders,
+        },
+        /// The `204` answer.
+        NoContent {
+            /// The response headers the OAS declares for this answer.
+            headers: DefinitionTemplateAdl2UploadNoContentHeaders,
+        },
+        /// The `400` answer.
+        BadRequest {
+            /// The body, decoded from canonical JSON; `None` when the service sent none.
+            body: Option<super::super::common::Error>,
+        },
+        /// The `409` answer.
+        Conflict,
+    }
+
+    /// The response headers the OAS declares for the `200` answer of
+    /// `GET /definition/template/adl2/{template_id}`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct DefinitionTemplateAdl2GetOkHeaders {
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+    }
+
+    /// The outcome of `GET /definition/template/adl2/{template_id}`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum DefinitionTemplateAdl2GetOutcome {
+        /// The `200` answer.
+        Ok {
+            /// The body as received; the request `Accept` selected its form and the `Content-Type` response header names it.
+            body: Vec<u8>,
+            /// The response headers the OAS declares for this answer.
+            headers: DefinitionTemplateAdl2GetOkHeaders,
+        },
+        /// The `400` answer.
+        BadRequest {
+            /// The body, decoded from canonical JSON; `None` when the service sent none.
+            body: Option<super::super::common::Error>,
+        },
+        /// The `404` answer.
+        NotFound,
+    }
+
+    /// The response headers the OAS declares for the `200` answer of
+    /// `GET /definition/template/adl2/{template_id}/example`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct DefinitionTemplateAdl2ExampleGetOkHeaders {
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+    }
+
+    /// The outcome of `GET /definition/template/adl2/{template_id}/example`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum DefinitionTemplateAdl2ExampleGetOutcome {
+        /// The `200` answer.
+        Ok {
+            /// The body, decoded from canonical JSON.
+            body: serde_json::Value,
+            /// The response headers the OAS declares for this answer.
+            headers: DefinitionTemplateAdl2ExampleGetOkHeaders,
+        },
+        /// The `400` answer.
+        BadRequest {
+            /// The body, decoded from canonical JSON; `None` when the service sent none.
+            body: Option<super::super::common::Error>,
+        },
+        /// The `404` answer.
+        NotFound,
+        /// The `406` answer.
+        NotAcceptable,
+    }
+
+    /// The response headers the OAS declares for the `200` answer of
+    /// `GET /definition/template/adl2/{template_id}/{version}`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct DefinitionTemplateAdl2VersionGetOkHeaders {
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+    }
+
+    /// The outcome of `GET /definition/template/adl2/{template_id}/{version}`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum DefinitionTemplateAdl2VersionGetOutcome {
+        /// The `200` answer.
+        Ok {
+            /// The body as received; the request `Accept` selected its form and the `Content-Type` response header names it.
+            body: Vec<u8>,
+            /// The response headers the OAS declares for this answer.
+            headers: DefinitionTemplateAdl2VersionGetOkHeaders,
+        },
+        /// The `400` answer.
+        BadRequest {
+            /// The body, decoded from canonical JSON; `None` when the service sent none.
+            body: Option<super::super::common::Error>,
+        },
+        /// The `404` answer.
+        NotFound,
+    }
+
+    /// The response headers the OAS declares for the `200` answer of
+    /// `GET /definition/query/{qualified_query_name}`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct DefinitionQueryListOkHeaders {
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+    }
+
+    /// The outcome of `GET /definition/query/{qualified_query_name}`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum DefinitionQueryListOutcome {
+        /// The `200` answer.
+        Ok {
+            /// The body, decoded from canonical JSON.
+            body: QueryList,
+            /// The response headers the OAS declares for this answer.
+            headers: DefinitionQueryListOkHeaders,
+        },
+    }
+
+    /// The response headers the OAS declares for the `200` answer of
+    /// `PUT /definition/query/{qualified_query_name}`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct DefinitionQueryStoreYamlOkHeaders {
+        /// The `Location` response header.
+        pub location: Option<String>,
+    }
+
+    /// The outcome of `PUT /definition/query/{qualified_query_name}`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum DefinitionQueryStoreYamlOutcome {
+        /// The `200` answer.
+        Ok {
+            /// The response headers the OAS declares for this answer.
+            headers: DefinitionQueryStoreYamlOkHeaders,
+        },
+        /// The `400` answer.
+        BadRequest {
+            /// The body, decoded from canonical JSON; `None` when the service sent none.
+            body: Option<super::super::common::Error>,
+        },
+    }
+
+    /// The response headers the OAS declares for the `200` answer of
+    /// `GET /definition/query/{qualified_query_name}/{version}`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct DefinitionQueryVersionGetOkHeaders {
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+    }
+
+    /// The outcome of `GET /definition/query/{qualified_query_name}/{version}`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum DefinitionQueryVersionGetOutcome {
+        /// The `200` answer.
+        Ok {
+            /// The body, decoded from canonical JSON.
+            body: StoredQuery,
+            /// The response headers the OAS declares for this answer.
+            headers: DefinitionQueryVersionGetOkHeaders,
+        },
+        /// The `404` answer.
+        NotFound,
+    }
+
+    /// The response headers the OAS declares for the `200` answer of
+    /// `PUT /definition/query/{qualified_query_name}/{version}`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct DefinitionQueryVersionStoreYamlOkHeaders {
+        /// The `Location` response header.
+        pub location: Option<String>,
+    }
+
+    /// The outcome of `PUT /definition/query/{qualified_query_name}/{version}`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum DefinitionQueryVersionStoreYamlOutcome {
+        /// The `200` answer.
+        Ok {
+            /// The response headers the OAS declares for this answer.
+            headers: DefinitionQueryVersionStoreYamlOkHeaders,
+        },
+        /// The `400` answer.
+        BadRequest {
+            /// The body, decoded from canonical JSON; `None` when the service sent none.
+            body: Option<super::super::common::Error>,
+        },
+        /// The `409` answer.
+        Conflict,
+    }
+
+    /// The `definition` API group over one configured CDR.
+    #[derive(Debug, Clone, Copy)]
+    pub struct DefinitionClient<'c, T> {
+        client: &'c crate::rest::client::Client<T>,
+    }
+
+    impl<'c, T: crate::rest::client::Transport> DefinitionClient<'c, T> {
+        /// The `definition` API group over `client`.
+        #[must_use]
+        pub fn new(client: &'c crate::rest::client::Client<T>) -> Self {
+            Self { client }
+        }
+
+        /// `GET /definition/template/adl1.4`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn definition_template_adl1_4_list(
+            &self,
+            params: &DefinitionTemplateAdl14ListParams,
+        ) -> Result<DefinitionTemplateAdl14ListOutcome, crate::rest::client::ClientError> {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::GET,
+                String::from("/definition/template/adl1.4"),
+            );
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            if let Some(value) = params.template_id.as_ref() {
+                request.query("template_id", value);
+            }
+            if let Some(value) = params.concept.as_ref() {
+                request.query("concept", value);
+            }
+            if let Some(value) = params.version.as_ref() {
+                request.query("version", value);
+            }
+            if let Some(value) = params.offset.as_ref() {
+                request.query("offset", value);
+            }
+            if let Some(value) = params.fetch.as_ref() {
+                request.query("fetch", value);
+            }
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::OK => Ok(DefinitionTemplateAdl14ListOutcome::Ok {
+                    body: answer.json()?,
+                    headers: DefinitionTemplateAdl14ListOkHeaders {
+                        content_type: answer.header("Content-Type"),
+                    },
+                }),
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `POST /definition/template/adl1.4`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn definition_template_adl1_4_upload(
+            &self,
+            params: &DefinitionTemplateAdl14UploadParams,
+            body: &str,
+        ) -> Result<DefinitionTemplateAdl14UploadOutcome, crate::rest::client::ClientError>
+        {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::POST,
+                String::from("/definition/template/adl1.4"),
+            );
+            if let Some(value) = params.prefer.as_ref() {
+                request.header("Prefer", &value.to_string())?;
+            }
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            if let Some(value) = params.content_type.as_ref() {
+                request.header("Content-Type", &value.to_string())?;
+            }
+            request.text_body(
+                body,
+                params.content_type.as_deref().unwrap_or("application/xml"),
+            )?;
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::CREATED => Ok(DefinitionTemplateAdl14UploadOutcome::Created {
+                    body: answer.body().to_vec(),
+                    headers: DefinitionTemplateAdl14UploadCreatedHeaders {
+                        location: answer.header("Location"),
+                        etag: answer.header("ETag"),
+                        content_type: answer.header("Content-Type"),
+                    },
+                }),
+                http::StatusCode::NO_CONTENT => {
+                    Ok(DefinitionTemplateAdl14UploadOutcome::NoContent {
+                        headers: DefinitionTemplateAdl14UploadNoContentHeaders {
+                            location: answer.header("Location"),
+                            etag: answer.header("ETag"),
+                            content_type: answer.header("Content-Type"),
+                        },
+                    })
+                }
+                http::StatusCode::BAD_REQUEST => {
+                    Ok(DefinitionTemplateAdl14UploadOutcome::BadRequest {
+                        body: answer.optional_json()?,
+                    })
+                }
+                http::StatusCode::CONFLICT => Ok(DefinitionTemplateAdl14UploadOutcome::Conflict),
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `GET /definition/template/adl1.4/{template_id}`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn definition_template_adl1_4_get(
+            &self,
+            params: &DefinitionTemplateAdl14GetParams,
+        ) -> Result<DefinitionTemplateAdl14GetOutcome, crate::rest::client::ClientError> {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::GET,
+                format!(
+                    "/definition/template/adl1.4/{}",
+                    crate::rest::client::path_segment(&params.template_id)
+                ),
+            );
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::OK => Ok(DefinitionTemplateAdl14GetOutcome::Ok {
+                    body: answer.body().to_vec(),
+                    headers: DefinitionTemplateAdl14GetOkHeaders {
+                        etag: answer.header("ETag"),
+                        content_type: answer.header("Content-Type"),
+                    },
+                }),
+                http::StatusCode::BAD_REQUEST => {
+                    Ok(DefinitionTemplateAdl14GetOutcome::BadRequest {
+                        body: answer.optional_json()?,
+                    })
+                }
+                http::StatusCode::NOT_FOUND => Ok(DefinitionTemplateAdl14GetOutcome::NotFound),
+                http::StatusCode::NOT_ACCEPTABLE => {
+                    Ok(DefinitionTemplateAdl14GetOutcome::NotAcceptable)
+                }
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `GET /definition/template/adl1.4/{template_id}/example`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn definition_template_adl1_4_example_get(
+            &self,
+            params: &DefinitionTemplateAdl14ExampleGetParams,
+        ) -> Result<DefinitionTemplateAdl14ExampleGetOutcome, crate::rest::client::ClientError>
+        {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::GET,
+                format!(
+                    "/definition/template/adl1.4/{}/example",
+                    crate::rest::client::path_segment(&params.template_id)
+                ),
+            );
+            if let Some(value) = params.r#type.as_ref() {
+                request.query("type", value);
+            }
+            if let Some(value) = params.detail_level.as_ref() {
+                request.query("detail_level", value);
+            }
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::OK => Ok(DefinitionTemplateAdl14ExampleGetOutcome::Ok {
+                    body: answer.json()?,
+                    headers: DefinitionTemplateAdl14ExampleGetOkHeaders {
+                        content_type: answer.header("Content-Type"),
+                    },
+                }),
+                http::StatusCode::BAD_REQUEST => {
+                    Ok(DefinitionTemplateAdl14ExampleGetOutcome::BadRequest {
+                        body: answer.optional_json()?,
+                    })
+                }
+                http::StatusCode::NOT_FOUND => {
+                    Ok(DefinitionTemplateAdl14ExampleGetOutcome::NotFound)
+                }
+                http::StatusCode::NOT_ACCEPTABLE => {
+                    Ok(DefinitionTemplateAdl14ExampleGetOutcome::NotAcceptable)
+                }
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `GET /definition/template/adl2`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn definition_template_adl2_list(
+            &self,
+            params: &DefinitionTemplateAdl2ListParams,
+        ) -> Result<DefinitionTemplateAdl2ListOutcome, crate::rest::client::ClientError> {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::GET,
+                String::from("/definition/template/adl2"),
+            );
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            if let Some(value) = params.template_id.as_ref() {
+                request.query("template_id", value);
+            }
+            if let Some(value) = params.concept.as_ref() {
+                request.query("concept", value);
+            }
+            if let Some(value) = params.version.as_ref() {
+                request.query("version", value);
+            }
+            if let Some(value) = params.offset.as_ref() {
+                request.query("offset", value);
+            }
+            if let Some(value) = params.fetch.as_ref() {
+                request.query("fetch", value);
+            }
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::OK => Ok(DefinitionTemplateAdl2ListOutcome::Ok {
+                    body: answer.json()?,
+                    headers: DefinitionTemplateAdl2ListOkHeaders {
+                        content_type: answer.header("Content-Type"),
+                    },
+                }),
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `POST /definition/template/adl2`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn definition_template_adl2_upload(
+            &self,
+            params: &DefinitionTemplateAdl2UploadParams,
+            body: &str,
+        ) -> Result<DefinitionTemplateAdl2UploadOutcome, crate::rest::client::ClientError> {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::POST,
+                String::from("/definition/template/adl2"),
+            );
+            if let Some(value) = params.version.as_ref() {
+                request.query("version", value);
+            }
+            if let Some(value) = params.prefer.as_ref() {
+                request.header("Prefer", &value.to_string())?;
+            }
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            if let Some(value) = params.content_type.as_ref() {
+                request.header("Content-Type", &value.to_string())?;
+            }
+            request.text_body(body, params.content_type.as_deref().unwrap_or("text/plain"))?;
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::CREATED => Ok(DefinitionTemplateAdl2UploadOutcome::Created {
+                    body: answer.body().to_vec(),
+                    headers: DefinitionTemplateAdl2UploadCreatedHeaders {
+                        location: answer.header("Location"),
+                        etag: answer.header("ETag"),
+                        content_type: answer.header("Content-Type"),
+                    },
+                }),
+                http::StatusCode::NO_CONTENT => {
+                    Ok(DefinitionTemplateAdl2UploadOutcome::NoContent {
+                        headers: DefinitionTemplateAdl2UploadNoContentHeaders {
+                            location: answer.header("Location"),
+                            etag: answer.header("ETag"),
+                            content_type: answer.header("Content-Type"),
+                        },
+                    })
+                }
+                http::StatusCode::BAD_REQUEST => {
+                    Ok(DefinitionTemplateAdl2UploadOutcome::BadRequest {
+                        body: answer.optional_json()?,
+                    })
+                }
+                http::StatusCode::CONFLICT => Ok(DefinitionTemplateAdl2UploadOutcome::Conflict),
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `GET /definition/template/adl2/{template_id}`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn definition_template_adl2_get(
+            &self,
+            params: &DefinitionTemplateAdl2GetParams,
+        ) -> Result<DefinitionTemplateAdl2GetOutcome, crate::rest::client::ClientError> {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::GET,
+                format!(
+                    "/definition/template/adl2/{}",
+                    crate::rest::client::path_segment(&params.template_id)
+                ),
+            );
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::OK => Ok(DefinitionTemplateAdl2GetOutcome::Ok {
+                    body: answer.body().to_vec(),
+                    headers: DefinitionTemplateAdl2GetOkHeaders {
+                        content_type: answer.header("Content-Type"),
+                    },
+                }),
+                http::StatusCode::BAD_REQUEST => Ok(DefinitionTemplateAdl2GetOutcome::BadRequest {
+                    body: answer.optional_json()?,
+                }),
+                http::StatusCode::NOT_FOUND => Ok(DefinitionTemplateAdl2GetOutcome::NotFound),
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `GET /definition/template/adl2/{template_id}/example`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn definition_template_adl2_example_get(
+            &self,
+            params: &DefinitionTemplateAdl2ExampleGetParams,
+        ) -> Result<DefinitionTemplateAdl2ExampleGetOutcome, crate::rest::client::ClientError>
+        {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::GET,
+                format!(
+                    "/definition/template/adl2/{}/example",
+                    crate::rest::client::path_segment(&params.template_id)
+                ),
+            );
+            if let Some(value) = params.r#type.as_ref() {
+                request.query("type", value);
+            }
+            if let Some(value) = params.detail_level.as_ref() {
+                request.query("detail_level", value);
+            }
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::OK => Ok(DefinitionTemplateAdl2ExampleGetOutcome::Ok {
+                    body: answer.json()?,
+                    headers: DefinitionTemplateAdl2ExampleGetOkHeaders {
+                        content_type: answer.header("Content-Type"),
+                    },
+                }),
+                http::StatusCode::BAD_REQUEST => {
+                    Ok(DefinitionTemplateAdl2ExampleGetOutcome::BadRequest {
+                        body: answer.optional_json()?,
+                    })
+                }
+                http::StatusCode::NOT_FOUND => {
+                    Ok(DefinitionTemplateAdl2ExampleGetOutcome::NotFound)
+                }
+                http::StatusCode::NOT_ACCEPTABLE => {
+                    Ok(DefinitionTemplateAdl2ExampleGetOutcome::NotAcceptable)
+                }
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `GET /definition/template/adl2/{template_id}/{version}`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn definition_template_adl2_version_get(
+            &self,
+            params: &DefinitionTemplateAdl2VersionGetParams,
+        ) -> Result<DefinitionTemplateAdl2VersionGetOutcome, crate::rest::client::ClientError>
+        {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::GET,
+                format!(
+                    "/definition/template/adl2/{}/{}",
+                    crate::rest::client::path_segment(&params.template_id),
+                    crate::rest::client::path_segment(&params.version)
+                ),
+            );
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::OK => Ok(DefinitionTemplateAdl2VersionGetOutcome::Ok {
+                    body: answer.body().to_vec(),
+                    headers: DefinitionTemplateAdl2VersionGetOkHeaders {
+                        content_type: answer.header("Content-Type"),
+                    },
+                }),
+                http::StatusCode::BAD_REQUEST => {
+                    Ok(DefinitionTemplateAdl2VersionGetOutcome::BadRequest {
+                        body: answer.optional_json()?,
+                    })
+                }
+                http::StatusCode::NOT_FOUND => {
+                    Ok(DefinitionTemplateAdl2VersionGetOutcome::NotFound)
+                }
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `GET /definition/query/{qualified_query_name}`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn definition_query_list(
+            &self,
+            params: &DefinitionQueryListParams,
+        ) -> Result<DefinitionQueryListOutcome, crate::rest::client::ClientError> {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::GET,
+                format!(
+                    "/definition/query/{}",
+                    crate::rest::client::path_segment(&params.qualified_query_name)
+                ),
+            );
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::OK => Ok(DefinitionQueryListOutcome::Ok {
+                    body: answer.json()?,
+                    headers: DefinitionQueryListOkHeaders {
+                        content_type: answer.header("Content-Type"),
+                    },
+                }),
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `PUT /definition/query/{qualified_query_name}`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn definition_query_store_yaml(
+            &self,
+            params: &DefinitionQueryStoreYamlParams,
+            body: &str,
+        ) -> Result<DefinitionQueryStoreYamlOutcome, crate::rest::client::ClientError> {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::PUT,
+                format!(
+                    "/definition/query/{}",
+                    crate::rest::client::path_segment(&params.qualified_query_name)
+                ),
+            );
+            if let Some(value) = params.query_type.as_ref() {
+                request.query("query_type", value);
+            }
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            if let Some(value) = params.content_type.as_ref() {
+                request.header("Content-Type", &value.to_string())?;
+            }
+            request.text_body(body, params.content_type.as_deref().unwrap_or("text/plain"))?;
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::OK => Ok(DefinitionQueryStoreYamlOutcome::Ok {
+                    headers: DefinitionQueryStoreYamlOkHeaders {
+                        location: answer.header("Location"),
+                    },
+                }),
+                http::StatusCode::BAD_REQUEST => Ok(DefinitionQueryStoreYamlOutcome::BadRequest {
+                    body: answer.optional_json()?,
+                }),
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `GET /definition/query/{qualified_query_name}/{version}`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn definition_query_version_get(
+            &self,
+            params: &DefinitionQueryVersionGetParams,
+        ) -> Result<DefinitionQueryVersionGetOutcome, crate::rest::client::ClientError> {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::GET,
+                format!(
+                    "/definition/query/{}/{}",
+                    crate::rest::client::path_segment(&params.qualified_query_name),
+                    crate::rest::client::path_segment(&params.version)
+                ),
+            );
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::OK => Ok(DefinitionQueryVersionGetOutcome::Ok {
+                    body: answer.json()?,
+                    headers: DefinitionQueryVersionGetOkHeaders {
+                        content_type: answer.header("Content-Type"),
+                    },
+                }),
+                http::StatusCode::NOT_FOUND => Ok(DefinitionQueryVersionGetOutcome::NotFound),
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `PUT /definition/query/{qualified_query_name}/{version}`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn definition_query_version_store_yaml(
+            &self,
+            params: &DefinitionQueryVersionStoreYamlParams,
+            body: &str,
+        ) -> Result<DefinitionQueryVersionStoreYamlOutcome, crate::rest::client::ClientError>
+        {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::PUT,
+                format!(
+                    "/definition/query/{}/{}",
+                    crate::rest::client::path_segment(&params.qualified_query_name),
+                    crate::rest::client::path_segment(&params.version)
+                ),
+            );
+            if let Some(value) = params.query_type.as_ref() {
+                request.query("query_type", value);
+            }
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            request.text_body(body, None.unwrap_or("text/plain"))?;
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::OK => Ok(DefinitionQueryVersionStoreYamlOutcome::Ok {
+                    headers: DefinitionQueryVersionStoreYamlOkHeaders {
+                        location: answer.header("Location"),
+                    },
+                }),
+                http::StatusCode::BAD_REQUEST => {
+                    Ok(DefinitionQueryVersionStoreYamlOutcome::BadRequest {
+                        body: answer.optional_json()?,
+                    })
+                }
+                http::StatusCode::CONFLICT => Ok(DefinitionQueryVersionStoreYamlOutcome::Conflict),
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+    }
+}
 /// The operations of this group as `(method, path, operation_id)`, for
 /// wiring an axum router in `ferroehr-rest`.
 pub const ROUTES: &[(&str, &str, &str)] = &[

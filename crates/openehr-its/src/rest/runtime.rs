@@ -3,13 +3,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 //! Hand-written ITS-REST runtime: the API error type the generated server
-//! traits return, mapped to an HTTP response.
+//! traits return, and (under `rest-server`) its mapping to an axum response.
 //!
 //! The DTOs, per-group server traits, and route tables are generated
 //! (`emit-rest`) into [`super::generated`]; `ferroehr-rest` implements the
 //! traits and wires axum.
 
-use axum::response::{IntoResponse, Response};
 use http::StatusCode;
 
 /// A single semantic-validation violation, keyed by the RM path of the
@@ -103,8 +102,9 @@ impl ApiError {
     }
 }
 
-impl IntoResponse for ApiError {
-    fn into_response(self) -> Response {
+#[cfg(feature = "rest-server")]
+impl axum::response::IntoResponse for ApiError {
+    fn into_response(self) -> axum::response::Response {
         (self.status(), self.to_string()).into_response()
     }
 }

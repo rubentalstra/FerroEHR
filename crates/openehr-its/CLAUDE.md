@@ -20,17 +20,22 @@ surface is API nobody can use.
 |---|---|---|
 | `src/xml/generated/` (`ToXml`/`FromXml`) | **GENERATED** (`emit-xml`, from the XSDs + BMM) | edit the emitter, regenerate |
 | `src/json_codec/generated/structural.rs` (the `_type` → decode dispatch + the declared-key table) | **GENERATED** (`emit-json`, from BMM) | edit the emitter, regenerate |
-| `src/rest/generated/` (ITS-REST DTOs, server traits, routes) | **GENERATED** (`emit-rest`, from the vendored OAS) | edit the emitter, regenerate |
-| `xml/runtime.rs`, `rest/runtime.rs`, `json` + `wire_validate` entry points, validation, fidelity gates | hand-written | edit normally, with spec citations |
+| `src/rest/generated/` (ITS-REST DTOs, server traits, clients, routes) | **GENERATED** (`emit-rest`, from the vendored OAS) | edit the emitter, regenerate |
+| `xml/runtime.rs`, `rest/runtime.rs`, `rest/client.rs` (the client runtime: `Transport`, `ReqwestTransport`, `Client`, `Credentials`, `RetryPolicy`, `ClientError`), `json` + `wire_validate` entry points, validation, fidelity gates | hand-written | edit normally, with spec citations |
 
 **Features (`default = ["full"]` = everything, so consumers are unaffected).**
 The graph underneath is layered: `json` → `xml` → `opt14` are the openEHR
 content surfaces and are all wasm-safe; `schema-validation` (`jsonschema` + the
-embedded RM schema) and `rest-server` (the generated contract + `axum`) sit
-outside that chain. A browser consumer takes
-`default-features = false, features = ["opt14"]`, and CI clippies that
-selection on `wasm32-unknown-unknown`. There is no dependency-free island:
-`default-features = false` alone compiles an empty crate. When adding surface,
+embedded RM schema) and the three REST features sit outside that chain:
+`rest` (DTOs, params, routes, `ApiError` over serde + `http`), `rest-server`
+(`rest` + the server traits + `axum`) and `rest-client` (`rest` + the
+generated clients + the `rest/client.rs` runtime over `reqwest`). A CI lane
+clippies each REST feature alone and reads back from `cargo tree` that `rest`
+pulls neither `axum` nor `reqwest` and `rest-client` pulls no `axum`. A
+browser consumer takes `default-features = false, features = ["opt14"]`, and
+CI clippies that selection on `wasm32-unknown-unknown`. There is no
+dependency-free island: `default-features = false` alone compiles an empty
+crate. When adding surface,
 put a new dependency in the layer that uses it (never in `json`, which every
 layer inherits).
 

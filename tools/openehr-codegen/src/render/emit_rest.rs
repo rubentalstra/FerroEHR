@@ -7,17 +7,22 @@
 //! Spec-first: the vendored `-codegen` OAS is the source of truth. For each API
 //! group this emits the transport DTOs (the non-RM component schemas), a param
 //! struct per operation, an `#[async_trait]` server trait (one typed method per
-//! operation), and a route table `(method, path, operationId)`. RM payload
-//! schemas resolve to the generated `openehr_rm`/`openehr_base` crates rather
-//! than being re-emitted. `ferroehr-rest` implements the trait and wires axum
-//! (the handler logic is hand-written application code, not generatable).
+//! operation), a route table `(method, path, operationId)`, and the CLIENT half
+//! of the same contract (`mod client`): one method per operation over a
+//! `rest::client::Client`, answering an outcome enum with one variant per
+//! status the OAS documents. RM payload schemas resolve to the generated
+//! `openehr_rm`/`openehr_base` crates rather than being re-emitted.
+//! `ferroehr-rest` implements the trait and wires axum (the handler logic is
+//! hand-written application code, not generatable); a consumer that CALLS a
+//! CDR takes the client. Both halves come from one OAS read, so they cannot
+//! drift from each other.
 
 #![expect(
     clippy::disallowed_types,
     reason = "dev tooling over JSON artifacts (vendored BMM/OAS bundles, emitter reports) — not the \
               application (#1694)"
 )]
-use crate::load::oas::{Oas, Operation};
+use crate::load::oas::{Oas, Operation, Response};
 use crate::plan::overrides::oas_monomorphization;
 use crate::render::naming;
 use serde_json::Value;
@@ -367,6 +372,7 @@ pub(crate) fn emit_group(
          clippy::pedantic,\n    \
          clippy::nursery,\n    \
          dead_code,\n    \
+         unused_imports,\n    \
          unused_variables,\n    \
          reason = \"mechanically generated contract text: the OAS is emitted in \
          full (every DTO, param struct and route, whether or not this workspace \
@@ -411,13 +417,14 @@ pub(crate) fn emit_group(
         emit_params_struct(&mut b, op, &ctx);
     }
 
-    // ── server trait ──
+    // ── server trait (the `rest-server` half) ──
     let _ = write!(
         b,
         "/// Server contract for the `{group}` API group (ITS-REST). Every method\n\
          /// defaults to returning `ApiError::NotImplemented`, so an implementor\n\
          /// (the application service, or a test stub) overrides only the\n\
          /// operations it supports.\n\
+         #[cfg(feature = \"rest-server\")]\n\
          #[async_trait::async_trait]\n\
          pub trait {trait_name} {{\n"
     );
@@ -425,6 +432,9 @@ pub(crate) fn emit_group(
         emit_trait_method(&mut b, op, &ctx);
     }
     b.push_str("}\n\n");
+
+    // ── client (the `rest-client` half) ──
+    emit_client_module(&mut b, group, &ops, &ctx);
 
     // ── route table ──
     let _ = write!(
@@ -1047,4 +1057,502 @@ fn emit_trait_method(b: &mut String, op: &Operation, ctx: &Ctx) {
         op.method.to_uppercase(),
         op.path
     );
+}
+
+/// The client half of one API group: an inline `client` module carrying, per
+/// operation, the outcome enum (one variant per documented status), a headers
+/// struct per response that declares headers, and one method on the group's
+/// client type over the hand-written `crate::rest::client::Client`.
+///
+/// Every request is built from the operation's OAS declaration: path
+/// parameters substitute their `{name}` template (percent-encoded), query
+/// parameters go on the query string (`style: form`, one pair per array
+/// item, one pair per member of an object), header parameters become request
+/// headers (one field per array item), and the body is canonical JSON when
+/// the request content declares `application/json`, raw text otherwise. The
+/// response is matched on its status against the documented set; a status the
+/// OAS does not document is a typed error, never an outcome.
+fn emit_client_module(out: &mut String, group: &str, ops: &[Operation], ctx: &Ctx) {
+    let client_ty = format!("{}Client", naming::type_name(group));
+    // Rendered into its own buffer: the module sits one level below the group
+    // module, so a hoisted `super::common::…` reference the shared type mapper
+    // produces needs one more `super` here.
+    let mut b = String::new();
+    let b = &mut b;
+    let _ = write!(
+        b,
+        "/// The client half of the `{group}` API group (ITS-REST): one method per\n\
+         /// operation over a [`crate::rest::client::Client`], answering an outcome\n\
+         /// enum with one variant per status the OAS documents for it.\n\
+         #[cfg(feature = \"rest-client\")]\n\
+         pub mod client {{\n    \
+         use super::*;\n\n"
+    );
+    for op in ops {
+        emit_outcome(b, op, ctx);
+    }
+    let _ = write!(
+        b,
+        "    /// The `{group}` API group over one configured CDR.\n    \
+         #[derive(Debug, Clone, Copy)]\n    \
+         pub struct {client_ty}<'c, T> {{\n        \
+         client: &'c crate::rest::client::Client<T>,\n    \
+         }}\n\n    \
+         impl<'c, T: crate::rest::client::Transport> {client_ty}<'c, T> {{\n        \
+         /// The `{group}` API group over `client`.\n        \
+         #[must_use]\n        \
+         pub fn new(client: &'c crate::rest::client::Client<T>) -> Self {{\n            \
+         Self {{ client }}\n        \
+         }}\n\n"
+    );
+    for op in ops {
+        emit_client_method(b, op, ctx);
+    }
+    b.push_str("    }\n}\n");
+    out.push_str(&b.replace("super::common::", "super::super::common::"));
+}
+
+/// The `PascalCase` variant name and the `http::StatusCode` constant path for
+/// one documented status, both derived from the `http` crate's registry
+/// (`canonical_reason`). A status the registry does not name emits a name
+/// and a constant that do not exist, so the generated crate fails to compile
+/// naming the status rather than the emitter skipping a documented outcome.
+fn status_variant(status: http::StatusCode) -> (String, String) {
+    let Some(reason) = status.canonical_reason() else {
+        return (
+            format!("UnregisteredStatus{}", status.as_u16()),
+            format!("http::StatusCode::UNREGISTERED_{}", status.as_u16()),
+        );
+    };
+    // `IM_A_TEAPOT` is the one constant whose spelling drops the apostrophe.
+    let words: Vec<String> = reason
+        .split(|c: char| !c.is_ascii_alphanumeric())
+        .filter(|w| !w.is_empty())
+        .map(str::to_ascii_lowercase)
+        .collect();
+    let name: String = words
+        .iter()
+        .map(|w| {
+            let mut cs = w.chars();
+            cs.next()
+                .map(|c| c.to_ascii_uppercase())
+                .into_iter()
+                .chain(cs)
+                .collect::<String>()
+        })
+        .collect();
+    let constant = words
+        .iter()
+        .map(|w| w.to_ascii_uppercase())
+        .collect::<Vec<_>>()
+        .join("_");
+    (name, format!("http::StatusCode::{constant}"))
+}
+
+/// The responses the client matches for `op`: the OAS set, plus the docs-text
+/// correction the ITS-REST overview makes to every create operation.
+///
+/// NOTE: `ITS-REST/specifications/docs/overview/Requests_and_responses.md`
+/// §Prefer header: under `return=minimal` "If no response body is returned,
+/// the service SHOULD use `204 No Content`" — the docs text wins over the OAS,
+/// which lists `201` alone for the create operations.
+fn client_responses(op: &Operation) -> Vec<Response> {
+    let has_prefer = op.parameters.iter().any(|p| p.name == "Prefer");
+    let mut out: Vec<Response> = op
+        .responses
+        .iter()
+        .map(|r| Response {
+            status: r.status,
+            media: r.media.clone(),
+            headers: r.headers.clone(),
+        })
+        .collect();
+    let created = out.iter().find(|r| r.status == http::StatusCode::CREATED);
+    if has_prefer
+        && let Some(created) = created
+        && !out.iter().any(|r| r.status == http::StatusCode::NO_CONTENT)
+    {
+        let headers = created.headers.clone();
+        out.push(Response {
+            status: http::StatusCode::NO_CONTENT,
+            media: Vec::new(),
+            headers,
+        });
+        out.sort_by_key(|r| r.status);
+    }
+    out
+}
+
+/// The response headers the docs text defines as LISTS, so a repeated field
+/// carries every value rather than the first.
+///
+/// NOTE: `ITS-REST/specifications/docs/overview/Requests_and_responses.md`
+/// §openehr-item-tag and openehr-version-item-tag: "The list of all `ITEM_TAG`"
+/// (the OAS types the header `string`, one field line per tag).
+const LIST_HEADERS: &[&str] = &["openehr-item-tag", "openehr-version-item-tag"];
+
+/// The client's typing of one documented response body.
+enum ClientBody {
+    /// No content declared: the variant carries no body.
+    None,
+    /// Exactly one media type, `application/json`: decoded into the mapped
+    /// Rust type; `optional` when the OAS lets the body be empty.
+    Json { ty: String, optional: bool },
+    /// Several media types, or a non-JSON one: the body as received — the
+    /// request `Accept` selected its form and the response `Content-Type`
+    /// header names it.
+    Raw,
+}
+
+/// How the client types the body of `resp` for `op`.
+///
+/// A `2xx` JSON body is present by the OAS unless the operation takes a
+/// `Prefer` parameter and answers `201` (ITS-REST: "If the `Prefer` header is
+/// missing or set to `return=minimal`, the body is empty" — every `201_*`
+/// response component), so that one is `Option`. An error response's JSON body
+/// is always optional: "The response body MAY contain error details" (the
+/// `400` response component).
+fn client_body(op: &Operation, resp: &Response, ctx: &Ctx) -> ClientBody {
+    match resp.media.as_slice() {
+        [] => ClientBody::None,
+        [(mt, schema)] if mt == "application/json" => {
+            let has_prefer = op.parameters.iter().any(|p| p.name == "Prefer");
+            let optional = resp.status.is_client_error()
+                || (resp.status == http::StatusCode::CREATED && has_prefer);
+            ClientBody::Json {
+                ty: ctx.rust_type(schema),
+                optional,
+            }
+        }
+        _ => ClientBody::Raw,
+    }
+}
+
+fn outcome_name(op: &Operation) -> String {
+    format!("{}Outcome", type_id(&op.operation_id))
+}
+
+fn headers_name(op: &Operation, variant: &str) -> String {
+    format!("{}{variant}Headers", type_id(&op.operation_id))
+}
+
+/// The outcome enum of one operation plus the headers struct of every
+/// response that declares headers.
+fn emit_outcome(b: &mut String, op: &Operation, ctx: &Ctx) {
+    let outcome = outcome_name(op);
+    let responses = client_responses(op);
+    for resp in &responses {
+        if resp.headers.is_empty() {
+            continue;
+        }
+        let (variant, _) = status_variant(resp.status);
+        let _ = write!(
+            b,
+            "    /// The response headers the OAS declares for the `{}` answer of\n    \
+             /// `{} {}`, each as received (absent when the service did not send it).\n    \
+             #[derive(Debug, Clone)]\n    \
+             pub struct {} {{\n",
+            resp.status.as_u16(),
+            op.method.to_uppercase(),
+            op.path,
+            headers_name(op, &variant)
+        );
+        for h in &resp.headers {
+            if LIST_HEADERS.contains(&h.as_str()) {
+                let _ = writeln!(
+                    b,
+                    "        /// Every value of the `{h}` response header, one per field line.\n        pub {}: Vec<String>,",
+                    field_id(h)
+                );
+            } else {
+                let _ = writeln!(
+                    b,
+                    "        /// The `{h}` response header.\n        pub {}: Option<String>,",
+                    field_id(h)
+                );
+            }
+        }
+        b.push_str("    }\n\n");
+    }
+    let _ = write!(
+        b,
+        "    /// The outcome of `{} {}`: one variant per status the OAS documents.\n    \
+         /// A status outside this set is a [`crate::rest::client::ClientError`].\n    \
+         #[derive(Debug, Clone)]\n    \
+         pub enum {outcome} {{\n",
+        op.method.to_uppercase(),
+        op.path
+    );
+    for resp in &responses {
+        let (variant, _) = status_variant(resp.status);
+        let _ = writeln!(b, "        /// The `{}` answer.", resp.status.as_u16());
+        // Each field with its own doc line (`missing_docs` reaches variant
+        // fields too).
+        let mut fields: Vec<(String, String)> = Vec::new();
+        match client_body(op, resp, ctx) {
+            ClientBody::None => {}
+            ClientBody::Json { ty, optional } => {
+                fields.push(if optional {
+                    (
+                        "The body, decoded from canonical JSON; `None` when the service sent none."
+                            .to_string(),
+                        format!("body: Option<{ty}>"),
+                    )
+                } else {
+                    (
+                        "The body, decoded from canonical JSON.".to_string(),
+                        format!("body: {ty}"),
+                    )
+                });
+            }
+            ClientBody::Raw => fields.push((
+                "The body as received; the request `Accept` selected its form and the \
+                 `Content-Type` response header names it."
+                    .to_string(),
+                "body: Vec<u8>".to_string(),
+            )),
+        }
+        if !resp.headers.is_empty() {
+            fields.push((
+                "The response headers the OAS declares for this answer.".to_string(),
+                format!("headers: {}", headers_name(op, &variant)),
+            ));
+        }
+        if fields.is_empty() {
+            let _ = writeln!(b, "        {variant},");
+        } else {
+            let _ = writeln!(b, "        {variant} {{");
+            for (doc, field) in &fields {
+                let _ = writeln!(b, "            /// {doc}\n            {field},");
+            }
+            b.push_str("        },\n");
+        }
+    }
+    b.push_str("    }\n\n");
+}
+
+/// The request-path expression for `op`: its OAS path with every `{name}`
+/// substituted by the percent-encoded path parameter, and an RFC 6570 query
+/// expansion (`{?name*}`) dropped — the query parameters carry it.
+fn path_format(op: &Operation) -> String {
+    let mut template = String::new();
+    let mut args: Vec<String> = Vec::new();
+    let mut chunks = op.path.split('{');
+    template.push_str(chunks.next().unwrap_or_default());
+    for chunk in chunks {
+        if let Some((name, tail)) = chunk.split_once('}') {
+            if !name.starts_with('?') {
+                template.push_str("{}");
+                args.push(format!(
+                    "crate::rest::client::path_segment(&params.{})",
+                    field_id(name)
+                ));
+            }
+            template.push_str(tail);
+        } else {
+            template.push('{');
+            template.push_str(chunk);
+        }
+    }
+    if args.is_empty() {
+        format!("String::from(\"{template}\")")
+    } else {
+        format!("format!(\"{template}\", {})", args.join(", "))
+    }
+}
+
+/// One client method: build the request from the params and body, execute
+/// it, and match the answer's status against the documented set.
+fn emit_client_method(b: &mut String, op: &Operation, ctx: &Ctx) {
+    let method = field_id(&op.operation_id);
+    let outcome = outcome_name(op);
+    let mut args = String::from("&self");
+    if !op.parameters.is_empty() {
+        let _ = write!(args, ", params: &{}", param_struct_name(op));
+    }
+    let json_request = op.request_media.iter().any(|m| m == "application/json");
+    let mut body_ty = None;
+    if let Some((schema, required)) = &op.request_body {
+        let ty = if json_request {
+            format!("&{}", ctx.rust_type(schema))
+        } else {
+            "&str".to_string()
+        };
+        if *required {
+            let _ = write!(args, ", body: {ty}");
+        } else {
+            let _ = write!(args, ", body: Option<{ty}>");
+        }
+        body_ty = Some(*required);
+    }
+    // The binding is mutable only when a parameter or body is written onto it.
+    let mutated = body_ty.is_some()
+        || op
+            .parameters
+            .iter()
+            .any(|p| matches!(p.location.as_str(), "query" | "header"));
+    let _ = write!(
+        b,
+        "        /// `{} {}`\n        \
+         ///\n        \
+         /// # Errors\n        \
+         /// A status the OAS does not document for this operation, a refused\n        \
+         /// credential, a service failure, an undecodable body, or a request\n        \
+         /// that could not be sent — see [`crate::rest::client::ClientError`].\n        \
+         pub async fn {method}({args}) -> Result<{outcome}, crate::rest::client::ClientError> {{\n            \
+         let {}request = crate::rest::client::Request::new(http::Method::{}, {});\n",
+        op.method.to_uppercase(),
+        op.path,
+        if mutated { "mut " } else { "" },
+        op.method.to_uppercase(),
+        path_format(op)
+    );
+    // Parameters, in declaration order: query → query string, header → headers.
+    for p in &op.parameters {
+        let ident = field_id(&p.name);
+        let ty = ctx.param_rust_type(&p.schema);
+        match p.location.as_str() {
+            "query" => emit_query_param(b, &p.name, &ident, &ty, p.required),
+            "header" => emit_header_param(b, &p.name, &ident, &ty, p.required),
+            _ => {}
+        }
+    }
+    let content_type_expr = if op.parameters.iter().any(|p| p.name == "Content-Type") {
+        "params.content_type.as_deref()".to_string()
+    } else {
+        "None".to_string()
+    };
+    if let Some(required) = body_ty {
+        let send = if json_request {
+            format!("request.json_body(body, {content_type_expr})?;")
+        } else {
+            let default_media = op
+                .request_media
+                .first()
+                .map_or("application/octet-stream", String::as_str);
+            format!("request.text_body(body, {content_type_expr}.unwrap_or(\"{default_media}\"))?;")
+        };
+        if required {
+            let _ = writeln!(b, "            {send}");
+        } else {
+            let _ = writeln!(
+                b,
+                "            if let Some(body) = body {{\n                {send}\n            }}"
+            );
+        }
+    }
+    let _ = write!(
+        b,
+        "            let answer = self.client.execute(request).await?;\n            \
+         match answer.status() {{\n"
+    );
+    for resp in &client_responses(op) {
+        let (variant, constant) = status_variant(resp.status);
+        let mut fields: Vec<String> = Vec::new();
+        match client_body(op, resp, ctx) {
+            ClientBody::None => {}
+            ClientBody::Json { optional, .. } => fields.push(if optional {
+                "body: answer.optional_json()?".to_string()
+            } else {
+                "body: answer.json()?".to_string()
+            }),
+            ClientBody::Raw => fields.push("body: answer.body().to_vec()".to_string()),
+        }
+        if !resp.headers.is_empty() {
+            let members: Vec<String> = resp
+                .headers
+                .iter()
+                .map(|h| {
+                    if LIST_HEADERS.contains(&h.as_str()) {
+                        format!("{}: answer.header_all(\"{h}\")", field_id(h))
+                    } else {
+                        format!("{}: answer.header(\"{h}\")", field_id(h))
+                    }
+                })
+                .collect();
+            fields.push(format!(
+                "headers: {} {{ {} }}",
+                headers_name(op, &variant),
+                members.join(", ")
+            ));
+        }
+        if fields.is_empty() {
+            let _ = writeln!(b, "                {constant} => Ok({outcome}::{variant}),");
+        } else {
+            let _ = writeln!(
+                b,
+                "                {constant} => Ok({outcome}::{variant} {{ {} }}),",
+                fields.join(", ")
+            );
+        }
+    }
+    b.push_str(
+        "                _ => Err(answer.into_undocumented()),\n            \
+         }\n        \
+         }\n\n",
+    );
+}
+
+/// One query parameter onto the request: a scalar as one pair, an array as
+/// one pair per item, an object (`style: form, explode: true`) as one pair per
+/// member.
+fn emit_query_param(b: &mut String, name: &str, ident: &str, ty: &str, required: bool) {
+    let inner = ty
+        .strip_prefix("Option<")
+        .and_then(|t| t.strip_suffix('>'))
+        .unwrap_or(ty);
+    let push = if inner.starts_with("Vec<") {
+        format!(
+            "for item in value {{\n                    request.query(\"{name}\", item);\n                }}"
+        )
+    } else if inner.starts_with("std::collections::BTreeMap<") || inner == "QueryParameters" {
+        // A JSON string goes bare; any other value as its JSON text (a number
+        // or boolean reads as itself, an object or array as JSON).
+        "for (member, item) in value {\n                    \
+         match item {\n                        \
+         serde_json::Value::String(text) => request.query(member, text),\n                        \
+         other => request.query(member, other),\n                    \
+         }\n                }"
+            .to_string()
+    } else {
+        format!("request.query(\"{name}\", value);")
+    };
+    if required {
+        let _ = writeln!(
+            b,
+            "            {{\n                let value = &params.{ident};\n                {push}\n            }}"
+        );
+    } else {
+        let _ = writeln!(
+            b,
+            "            if let Some(value) = params.{ident}.as_ref() {{\n                {push}\n            }}"
+        );
+    }
+}
+
+/// One header parameter onto the request: a scalar as one field, an array
+/// (`style: simple, explode: true`) as one field per item.
+fn emit_header_param(b: &mut String, name: &str, ident: &str, ty: &str, required: bool) {
+    let inner = ty
+        .strip_prefix("Option<")
+        .and_then(|t| t.strip_suffix('>'))
+        .unwrap_or(ty);
+    let push = if inner.starts_with("Vec<") {
+        format!(
+            "for item in value {{\n                    request.header(\"{name}\", &item.to_string())?;\n                }}"
+        )
+    } else {
+        format!("request.header(\"{name}\", &value.to_string())?;")
+    };
+    if required {
+        let _ = writeln!(
+            b,
+            "            {{\n                let value = &params.{ident};\n                {push}\n            }}"
+        );
+    } else {
+        let _ = writeln!(
+            b,
+            "            if let Some(value) = params.{ident}.as_ref() {{\n                {push}\n            }}"
+        );
+    }
 }

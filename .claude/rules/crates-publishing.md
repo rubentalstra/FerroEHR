@@ -108,10 +108,12 @@ every member is verified together.
   decisions 2026-09-03, 2026-09-04 and 2026-09-24, #3482; each BUSL crate
   ships its own `LICENSE` naming the crate as the Licensed Work) and ships
   `LICENSE-APACHE-2.0`.
+- No Apache-2.0 crate takes a normal or build dependency on a BUSL-1.1 crate
+  (dev-dependencies are exempt); `scripts/checks/licence-boundary.sh` in the
+  `licensing` CI job refuses a crossing and a `license` that changes side.
 - Internal dev-dependencies stay **path-only** (no `version =`) — cargo
   strips them at packaging, which is what keeps the dev-only dependency
-  cycles (`openehr-rm` ⇢ `openehr-its`, `openehr-its` ⇢ `openehr-adl`,
-  `openehr-sdt` ⇢ `openehr-adl`)
+  cycles (`openehr-rm` ⇢ `openehr-its`, `openehr-sdt` ⇢ `openehr-adl`)
   publishable. Never add a version to a dev-dependency on a sibling crate.
 - Each crate's `README.md` is part of the published package and its
   crates.io front page — keep it accurate in the same PR that changes what

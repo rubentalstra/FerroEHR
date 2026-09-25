@@ -12,7 +12,7 @@ hand-written. `openehr-codegen` reads the vendored specs and emits Rust:
 - `emit-xml` → canonical-XML `ToXml`/`FromXml` for the RM/BASE types into
   `openehr-its/src/xml/generated/` (from the vendored XSDs + the BMM field model).
 - `emit-rest` → the ITS-REST contract (DTOs + `#[async_trait]` server traits +
-  routes) into `openehr-its/src/rest/generated/` (from the vendored `-codegen` OAS).
+  per-group clients + routes) into `openehr-its/src/rest/generated/` (from the vendored `-codegen` OAS).
 - `emit-rm-model` → the static RM attribute/type model (attributes+types,
   multiplicity, descendant/ancestor sets, structure classification) into
   `openehr-rm/src/model/` — the AQL planner's oracle. `emit` already

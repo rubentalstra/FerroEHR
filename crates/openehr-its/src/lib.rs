@@ -2,13 +2,9 @@
 // SPDX-FileCopyrightText: openEHR Foundation
 // SPDX-License-Identifier: Apache-2.0
 
-//! openEHR **ITS** — Implementation Technology Specifications. This crate
-#![allow(
-    clippy::doc_markdown,
-    reason = "module docs are prose with many proper nouns"
-)]
+//! openEHR **ITS** — Implementation Technology Specifications.
 //!
-//! mirrors the four `specifications-ITS-*` sub-repos (aggregated by
+//! This crate mirrors the four `specifications-ITS-*` sub-repos (aggregated by
 //! `specifications-ITS`): how openEHR RM instances are serialized and exposed.
 //!
 //! - [`json`] — **ITS-JSON**: canonical JSON. The named entry points
@@ -25,10 +21,11 @@
 //!   invariant cores of `openehr_rm::v1_2::validate` (the `Validate` impls and every
 //!   value-level decision stay in `openehr-rm`/`openehr-base`).
 //! - [`xml`] — **ITS-XML**: canonical XML via `quick-xml`, validated against the
-//!   vendored XSDs (`schemas/xml/`). (Implementation is P5.)
-//! - [`rest`] — **ITS-REST**: the openEHR REST API contract. The machine-readable
-//!   OpenAPI specs are vendored (`vendor/rest-oas/`); the server that implements
-//!   them is `ferroehr-rest` (P6).
+//!   vendored XSDs (`schemas/xml/`).
+//! - [`rest`] — **ITS-REST**: the openEHR REST API contract, generated from the
+//!   vendored OpenAPI (`vendor/rest-oas/`): the DTOs and route tables under
+//!   `rest`, the per-group server traits under `rest-server`, and the per-group
+//!   clients with their runtime `rest::client` under `rest-client`.
 //! - **ITS-BMM** has no module here: the vendored BMM meta-model that drives
 //!   code generation lives in `openehr-codegen/vendor/bmm`, and the runtime
 //!   BMM object model is `openehr-lang`.
@@ -45,8 +42,11 @@
 //! reader. A `wasm32-unknown-unknown` consumer takes
 //! `default-features = false, features = ["opt14"]`, which pulls that whole
 //! chain; `schema-validation` (`jsonschema` plus the compiled-in ITS-JSON RM
-//! schema) and `rest-server` (the generated server contract, `axum`) stay
-//! outside it.
+//! schema) and the three ITS-REST features stay outside it. `rest` is the
+//! contract both halves share (DTOs, param structs, route tables, `ApiError`)
+//! over serde and `http`; `rest-server` adds the server traits and `axum`;
+//! `rest-client` adds the generated clients and the client runtime over
+//! `reqwest`.
 //!
 //! The Simplified Formats (FLAT / STRUCTURED / Web Template), the RM-instance
 //! validation passes and the SMART scope grammar are hand-written engines over
@@ -55,6 +55,10 @@
 // Doctests are copy-paste templates: they must use `?`, never unwrap
 // (C-QUESTION-MARK, https://rust-lang.github.io/api-guidelines/documentation.html#c-question-mark).
 #![doc(test(attr(deny(warnings))))]
+#![allow(
+    clippy::doc_markdown,
+    reason = "module docs are prose with many proper nouns"
+)]
 #[cfg(feature = "xml")]
 pub mod aom2;
 #[cfg(feature = "xml")]

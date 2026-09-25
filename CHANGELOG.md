@@ -15,6 +15,33 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+
+- **`openehr-its` ships an ITS-REST client** (#3485). The new `rest-client`
+  feature adds a generated client per ITS-REST 1.1.0 API group
+  (`rest::generated::<group>::client`) over a hand-written runtime
+  (`rest::client`: the `Transport` engine trait, the shipped `reqwest` engine,
+  Basic and Bearer credentials, the retry budget and `ClientError`). Each
+  operation takes its parameter struct, with `Prefer`, `If-Match` and `Accept`
+  as fields, and answers an outcome with one variant per status the OpenAPI
+  documents for it; declared response headers such as `ETag` and `Location`
+  come back in a typed struct. Any other status is
+  `ClientError::UndocumentedStatus`, and `401`, `403` and `5xx` are their own
+  errors. Idempotent requests are retried after a transport failure or a
+  `5xx`; a `POST` is sent once. A create operation also answers `NoContent`,
+  the `204` the ITS-REST overview prescribes under `Prefer: return=minimal`
+  although the OpenAPI lists `201` alone. FerroBRIDGE keeps its hand-written
+  client until it moves to this one (its issue #276). The DTOs, parameter
+  structs and route tables move to a
+  new `rest` feature over serde and `http` alone, which both `rest-server` and
+  `rest-client` build on, so a client never compiles `axum`. `full` now
+  includes `rest-client`. The nine `openehr-*` crates step to 0.0.71.
+- **A CI guard keeps the Apache-2.0 crates free of BUSL-1.1 code:**
+  `scripts/checks/licence-boundary.sh` refuses a normal or build dependency,
+  or a feature, from `openehr-base`, `openehr-lang`, `openehr-term`,
+  `openehr-rm`, `openehr-am` or `openehr-its` on `openehr-query`,
+  `openehr-adl` or `openehr-sdt`, and a `license` field that changes side.
+
 ### Changed
 
 - **FerroTERM moves to 0.1.5 everywhere the product pins it.** The quickstart
@@ -63,6 +90,13 @@ workflow refuses a tag that has no matching section here.
   `ferroterm-sync` service, and carries the standard concept status properties
   on locally authored code systems. The chart version becomes 10.1.2; an
   install that pins the chart keeps running the image it pinned.
+
+### Fixed
+
+- The `no attribution in commits` CI job no longer refuses the
+  `Co-authored-by: dependabot[bot]` trailer GitHub writes when it squash-merges
+  a Dependabot pull request, which had failed the last three pushes to `main`.
+  The commit-msg hook keeps that line too.
 
 ## [4.3.1] - 2026-09-16
 

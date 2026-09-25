@@ -36,8 +36,25 @@ pub(crate) struct Operation<'a> {
     pub parameters: Vec<Param>,
     /// The request body schema (resolved `Value`) + whether it is required.
     pub request_body: Option<(Value, bool)>,
+    /// The media types the request body content declares, in document order
+    /// (`application/json` for a canonical-JSON body, `application/xml` for an
+    /// OPT 1.4 upload, …); empty when the operation takes no body.
+    pub request_media: Vec<String>,
     /// The primary success (2xx) response body schema (resolved), if any.
     pub success_body: Option<Value>,
+    /// Every documented response, in ascending status order — the client
+    /// half's outcome variants. The `default` response key is not a status
+    /// and is left out.
+    pub responses: Vec<Response>,
+}
+
+/// One documented response of an operation: a status, the media types its
+/// content declares with their schemas (verbatim — a `$ref` keeps its name),
+/// and the response headers it declares, in document order.
+pub(crate) struct Response {
+    pub status: http::StatusCode,
+    pub media: Vec<(String, Value)>,
+    pub headers: Vec<String>,
 }
 
 /// One resolved operation parameter.
@@ -197,14 +214,18 @@ impl Oas {
                     .map_or_else(|| synth_op_id(method, path), str::to_string);
                 let parameters = self.parse_params(op);
                 let request_body = self.parse_request_body(op);
+                let request_media = self.parse_request_media(op);
                 let success_body = self.parse_success(op);
+                let responses = self.parse_responses(op);
                 out.push(Operation {
                     method,
                     path,
                     operation_id,
                     parameters,
                     request_body,
+                    request_media,
                     success_body,
+                    responses,
                 });
             }
         }
@@ -242,6 +263,54 @@ impl Oas {
         let required = rb.get("required").and_then(Value::as_bool).unwrap_or(false);
         let schema = Self::first_json_schema(rb)?;
         Some((schema, required))
+    }
+
+    fn parse_request_media(&self, op: &Value) -> Vec<String> {
+        op.get("requestBody")
+            .map(|rb| self.resolve(rb))
+            .and_then(|rb| rb.get("content")?.as_object())
+            .map(|content| content.keys().cloned().collect())
+            .unwrap_or_default()
+    }
+
+    /// Every response keyed by a numeric status, ascending, with the media
+    /// types and headers it declares.
+    fn parse_responses(&self, op: &Value) -> Vec<Response> {
+        let Some(responses) = op.get("responses").and_then(Value::as_object) else {
+            return Vec::new();
+        };
+        let mut out: Vec<Response> = responses
+            .iter()
+            .filter_map(|(code, resp)| {
+                // NOTE: OAS 3.0 §Responses Object keys a response by a status
+                // code or `default`; a non-numeric key is legitimately not a
+                // status, not a defect.
+                let status = http::StatusCode::from_u16(code.parse::<u16>().ok()?).ok()?;
+                let resp = self.resolve(resp);
+                let media = resp
+                    .get("content")
+                    .and_then(Value::as_object)
+                    .map(|content| {
+                        content
+                            .iter()
+                            .filter_map(|(mt, mv)| Some((mt.clone(), mv.get("schema")?.clone())))
+                            .collect()
+                    })
+                    .unwrap_or_default();
+                let headers = resp
+                    .get("headers")
+                    .and_then(Value::as_object)
+                    .map(|h| h.keys().cloned().collect())
+                    .unwrap_or_default();
+                Some(Response {
+                    status,
+                    media,
+                    headers,
+                })
+            })
+            .collect();
+        out.sort_by_key(|r| r.status);
+        out
     }
 
     fn parse_success(&self, op: &Value) -> Option<Value> {
