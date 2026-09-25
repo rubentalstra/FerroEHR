@@ -59,10 +59,6 @@ const VO_UID: &str = "8849182c-82ad-4088-a07f-48ead4180515";
 /// A version uid (`OBJECT_VERSION_ID` form, BASE `master05` §Syntaxes).
 const VERSION_UID: &str = "8849182c-82ad-4088-a07f-48ead4180515::cdr.example.org::1";
 
-/// [`VERSION_UID`] as one percent-encoded path segment.
-const VERSION_UID_ENCODED: &str =
-    "8849182c-82ad-4088-a07f-48ead4180515%3A%3Acdr.example.org%3A%3A1";
-
 /// A client over the `reqwest` engine for the service rooted at `base`.
 fn client_at(base: &str) -> Result<Client<ReqwestTransport>, Box<dyn Error>> {
     let transport = ReqwestTransport::with_timeout(Duration::from_secs(10))?;
@@ -199,6 +195,8 @@ async fn ehr_create_minimal_answers_created_with_etag_and_location() -> TestResu
         prefer: Some("return=minimal".to_owned()),
         accept: None,
         content_type: None,
+        openehr_version: None,
+        openehr_audit_details: None,
     };
     let outcome = ehr::client::EhrClient::new(&client)
         .ehr_create(&params, None)
@@ -232,7 +230,7 @@ async fn ehr_get_by_id_decodes_the_typed_ehr() -> TestResult {
         .await?;
     let (body, headers) = match outcome {
         ehr::client::EhrGetByIdOutcome::Ok { body, headers } => (body, headers),
-        other @ ehr::client::EhrGetByIdOutcome::NotFound => {
+        other @ ehr::client::EhrGetByIdOutcome::NotFound { .. } => {
             panic!("expected the 200 answer, got {other:?}")
         }
     };
@@ -258,7 +256,7 @@ async fn ehr_get_by_id_not_found_is_an_outcome() -> TestResult {
         .ehr_get_by_id(&get_ehr(EHR_ID))
         .await?;
     assert!(
-        matches!(outcome, ehr::client::EhrGetByIdOutcome::NotFound),
+        matches!(outcome, ehr::client::EhrGetByIdOutcome::NotFound { .. }),
         "expected the 404 answer, got {outcome:?}"
     );
     Ok(())
@@ -294,15 +292,21 @@ async fn composition_update_sends_if_match_and_reads_the_412_etag() -> TestResul
         content_type: None,
         openehr_item_tag: None,
         openehr_version_item_tag: None,
+        openehr_version: None,
+        openehr_audit_details: None,
+        openehr_template_id: None,
     };
     let outcome = ehr::client::EhrClient::new(&client)
         .composition_update(&params, &composition)
         .await?;
-    let headers = match outcome {
-        ehr::client::CompositionUpdateOutcome::PreconditionFailed { headers } => headers,
+    let (body, headers) = match outcome {
+        ehr::client::CompositionUpdateOutcome::PreconditionFailed { body, headers } => {
+            (body, headers)
+        }
         other => panic!("expected the 412 answer, got {other:?}"),
     };
     assert_eq!(headers.etag.as_deref(), Some(latest));
+    assert!(body.is_empty(), "the 412 carried no body: {body:?}");
     Ok(())
 }
 
@@ -331,6 +335,9 @@ async fn composition_update_sends_the_canonical_json_body() -> TestResult {
         content_type: None,
         openehr_item_tag: None,
         openehr_version_item_tag: None,
+        openehr_version: None,
+        openehr_audit_details: None,
+        openehr_template_id: None,
     };
     let outcome = ehr::client::EhrClient::new(&client)
         .composition_update(&params, &composition)
@@ -363,14 +370,16 @@ async fn contribution_create_conflict_is_an_outcome() -> TestResult {
         prefer: None,
         accept: None,
         content_type: None,
+        openehr_template_id: None,
     };
     let outcome = ehr::client::EhrClient::new(&client)
         .contribution_create(&params, &new_contribution()?)
         .await?;
-    assert!(
-        matches!(outcome, ehr::client::ContributionCreateOutcome::Conflict),
-        "expected the 409 answer, got {outcome:?}"
-    );
+    let body = match outcome {
+        ehr::client::ContributionCreateOutcome::Conflict { body } => body,
+        other => panic!("expected the 409 answer, got {other:?}"),
+    };
+    assert!(body.is_empty(), "the 409 carried no body: {body:?}");
     Ok(())
 }
 
@@ -378,7 +387,7 @@ async fn contribution_create_conflict_is_an_outcome() -> TestResult {
 ///
 /// OAS `ehr-codegen` `contribution_create` `400` references the `Error`
 /// schema; the `400` response component says the body MAY carry error details,
-/// so the typed body is optional.
+/// so the outcome carries the body as received and its decoded form.
 #[tokio::test]
 async fn contribution_create_bad_request_decodes_the_error_body() -> TestResult {
     let server = MockServer::start().await;
@@ -394,6 +403,7 @@ async fn contribution_create_bad_request_decodes_the_error_body() -> TestResult 
         prefer: None,
         accept: None,
         content_type: None,
+        openehr_template_id: None,
     };
     let outcome = ehr::client::EhrClient::new(&client)
         .contribution_create(&params, &new_contribution()?)
@@ -402,17 +412,184 @@ async fn contribution_create_bad_request_decodes_the_error_body() -> TestResult 
         ehr::client::ContributionCreateOutcome::BadRequest { body } => body,
         other => panic!("expected the 400 answer, got {other:?}"),
     };
-    let error = body.ok_or("the 400 answer carried an Error body")?;
+    let error = body.error().ok_or("the 400 answer carried an Error body")?;
     assert_eq!(error.message, "versions is malformed");
     assert_eq!(error.validation_errors, vec!["error1".to_owned()]);
+    assert_eq!(body.message(), Some("versions is malformed"));
+    assert_eq!(body.validation_errors(), ["error1"]);
+    Ok(())
+}
+
+/// A `400` whose body carries `message` alone still decodes as the `Error`.
+///
+/// OAS `Error` lists `validationErrors` as required, but the `400` response
+/// component makes the whole body a MAY; a service that sends the message
+/// without the list still sends its diagnostics, and the client reads them
+/// with an empty list rather than refusing the documented answer.
+#[tokio::test]
+async fn a_prose_bad_request_decodes_as_the_error() -> TestResult {
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path(format!("/ehr/{EHR_ID}/contribution")))
+        .respond_with(
+            ResponseTemplate::new(400)
+                .set_body_raw(r#"{"message":"the body is not JSON"}"#, "application/json"),
+        )
+        .expect(1)
+        .mount(&server)
+        .await;
+    let client = client_for(&server)?;
+    let params = ehr::ContributionCreateParams {
+        ehr_id: EHR_ID.to_owned(),
+        prefer: None,
+        accept: None,
+        content_type: None,
+        openehr_template_id: None,
+    };
+    let outcome = ehr::client::EhrClient::new(&client)
+        .contribution_create(&params, &new_contribution()?)
+        .await?;
+    let body = match outcome {
+        ehr::client::ContributionCreateOutcome::BadRequest { body } => body,
+        other => panic!("expected the 400 answer, got {other:?}"),
+    };
+    assert_eq!(body.message(), Some("the body is not JSON"));
+    assert!(body.validation_errors().is_empty());
+    assert_eq!(body.text(), Some(r#"{"message":"the body is not JSON"}"#));
+    Ok(())
+}
+
+/// `composition_create` sends the committal-metadata headers as the docs text
+/// writes them: `openehr-version` once, `openehr-audit-details` one field line
+/// per value, `openehr-template-id` once.
+///
+/// Docs text §openehr-version and openehr-audit-details: "services MUST accept
+/// `openehr-version` and `openehr-audit-details` custom request headers"; the
+/// example there sends `openehr-audit-details` as several lines. Docs text
+/// §openehr-template-id names the header for a Simplified Format commit.
+#[tokio::test]
+async fn composition_create_sends_the_commit_headers() -> TestResult {
+    let server = MockServer::start().await;
+    let composition: Composition =
+        from_canonical_json(&corpus_fixture("composition/minimal_event.v1.json")?)?;
+    Mock::given(method("POST"))
+        .and(path(format!("/ehr/{EHR_ID}/composition")))
+        .and(header(
+            "openehr-version",
+            "lifecycle_state.code_string=\"532\"",
+        ))
+        .and(header(
+            "openehr-template-id",
+            "IDCR - Vital Signs Encounter.v1",
+        ))
+        .respond_with(ResponseTemplate::new(204))
+        .expect(1)
+        .mount(&server)
+        .await;
+    let client = client_for(&server)?;
+    let params = ehr::CompositionCreateParams {
+        ehr_id: EHR_ID.to_owned(),
+        prefer: Some("return=minimal".to_owned()),
+        accept: None,
+        content_type: None,
+        openehr_item_tag: None,
+        openehr_version_item_tag: None,
+        openehr_version: Some("lifecycle_state.code_string=\"532\"".to_owned()),
+        openehr_audit_details: Some(vec![
+            "change_type.code_string=\"251\"".to_owned(),
+            "description.value=\"triage\"".to_owned(),
+        ]),
+        openehr_template_id: Some("IDCR - Vital Signs Encounter.v1".to_owned()),
+    };
+    let outcome = ehr::client::EhrClient::new(&client)
+        .composition_create(&params, &composition)
+        .await?;
+    assert!(
+        matches!(
+            outcome,
+            ehr::client::CompositionCreateOutcome::NoContent { .. }
+        ),
+        "expected the 204 answer, got {outcome:?}"
+    );
+    let requests = server.received_requests().await.ok_or("recording is on")?;
+    let request = requests.first().ok_or("one request was recorded")?;
+    let audit: Vec<&str> = request
+        .headers
+        .get_all("openehr-audit-details")
+        .iter()
+        .filter_map(|v| v.to_str().ok())
+        .collect();
+    assert_eq!(
+        audit,
+        [
+            "change_type.code_string=\"251\"",
+            "description.value=\"triage\""
+        ],
+        "one field line per audit-details value"
+    );
+    Ok(())
+}
+
+/// `composition_update` `422` carries the `Error` body with its
+/// `validationErrors`, although the OAS attaches no schema to that status.
+///
+/// OAS `ehr-codegen` `composition_update` documents `422` with no content; the
+/// `400` response component's "MAY contain error details" is the only body
+/// the docs text describes for an error, and a service that sends one under
+/// `422` is read the same way.
+#[tokio::test]
+async fn composition_update_unprocessable_carries_the_error_body() -> TestResult {
+    let server = MockServer::start().await;
+    let composition: Composition =
+        from_canonical_json(&corpus_fixture("composition/minimal_event.v1.json")?)?;
+    Mock::given(method("PUT"))
+        .and(path(format!("/ehr/{EHR_ID}/composition/{VO_UID}")))
+        .respond_with(ResponseTemplate::new(422).set_body_json(json!({
+            "error": "Unprocessable Entity",
+            "message": "the composition does not validate against its template",
+            "validationErrors": ["/content[0]: node not in template"]
+        })))
+        .expect(1)
+        .mount(&server)
+        .await;
+    let client = client_for(&server)?;
+    let params = ehr::CompositionUpdateParams {
+        ehr_id: EHR_ID.to_owned(),
+        uid_based_id: VO_UID.to_owned(),
+        if_match: format!("\"{VERSION_UID}\""),
+        prefer: None,
+        accept: None,
+        content_type: None,
+        openehr_item_tag: None,
+        openehr_version_item_tag: None,
+        openehr_version: None,
+        openehr_audit_details: None,
+        openehr_template_id: None,
+    };
+    let outcome = ehr::client::EhrClient::new(&client)
+        .composition_update(&params, &composition)
+        .await?;
+    let body = match outcome {
+        ehr::client::CompositionUpdateOutcome::UnprocessableEntity { body } => body,
+        other => panic!("expected the 422 answer, got {other:?}"),
+    };
+    assert_eq!(
+        body.message(),
+        Some("the composition does not validate against its template")
+    );
+    assert_eq!(
+        body.validation_errors(),
+        ["/content[0]: node not in template"]
+    );
     Ok(())
 }
 
 /// `composition_tags_get` `200` decodes the typed `ITEM_TAG` array.
 ///
 /// OAS `ehr-codegen` `composition_tags_get` `200`: an array of
-/// `ItemTagOfComposition`. The version uid in the path is one percent-encoded
-/// segment, so its `::` separators travel as `%3A%3A`.
+/// `ItemTagOfComposition`. The version uid in the path is one segment whose
+/// `::` separators travel literal: RFC 3986 §3.3 admits `:` in a `pchar`,
+/// and the ITS-REST examples write a `version_uid` that way.
 #[tokio::test]
 async fn composition_tags_get_decodes_the_typed_tags() -> TestResult {
     let server = MockServer::start().await;
@@ -425,7 +602,7 @@ async fn composition_tags_get_decodes_the_typed_tags() -> TestResult {
     )?];
     Mock::given(method("GET"))
         .and(path(format!(
-            "/ehr/{EHR_ID}/composition/{VERSION_UID_ENCODED}/tags"
+            "/ehr/{EHR_ID}/composition/{VERSION_UID}/tags"
         )))
         .respond_with(ResponseTemplate::new(200).set_body_json(to_canonical_value(&tags)))
         .expect(1)
@@ -442,7 +619,7 @@ async fn composition_tags_get_decodes_the_typed_tags() -> TestResult {
         .await?;
     let body = match outcome {
         ehr::client::CompositionTagsGetOutcome::Ok { body, .. } => body,
-        other @ ehr::client::CompositionTagsGetOutcome::NotFound => {
+        other @ ehr::client::CompositionTagsGetOutcome::NotFound { .. } => {
             panic!("expected the 200 answer, got {other:?}")
         }
     };
@@ -528,7 +705,7 @@ async fn adhoc_query_request_timeout_is_an_outcome() -> TestResult {
     assert!(
         matches!(
             outcome,
-            query::client::QueryExecuteAdhocQueryOutcome::RequestTimeout
+            query::client::QueryExecuteAdhocQueryOutcome::RequestTimeout { .. }
         ),
         "expected the 408 answer, got {outcome:?}"
     );
@@ -683,6 +860,8 @@ async fn person_create_unprocessable_is_an_outcome() -> TestResult {
         content_type: None,
         openehr_item_tag: None,
         openehr_version_item_tag: None,
+        openehr_version: None,
+        openehr_audit_details: None,
     };
     let outcome = demographic::client::DemographicClient::new(&client)
         .person_create(&params, &person)
@@ -690,7 +869,7 @@ async fn person_create_unprocessable_is_an_outcome() -> TestResult {
     assert!(
         matches!(
             outcome,
-            demographic::client::PersonCreateOutcome::UnprocessableEntity
+            demographic::client::PersonCreateOutcome::UnprocessableEntity { .. }
         ),
         "expected the 422 answer, got {outcome:?}"
     );
@@ -846,27 +1025,31 @@ async fn unauthorized_carries_the_challenge_and_detail() -> TestResult {
     let refused = ehr::client::EhrClient::new(&client)
         .ehr_get_by_id(&get_ehr(EHR_ID))
         .await;
-    let (got_challenge, detail) = match refused {
+    let (got_challenge, body) = match refused {
         Err(ClientError::Unauthorized {
-            challenge, detail, ..
-        }) => (challenge, detail),
+            challenge, body, ..
+        }) => (challenge, body),
         other => panic!("expected an unauthorized error, got {other:?}"),
     };
     assert_eq!(got_challenge.as_deref(), Some(challenge));
-    assert_eq!(detail.as_deref(), Some("token expired"));
+    assert_eq!(body.message(), Some("token expired"));
     Ok(())
 }
 
-/// `403` is a `Forbidden` error.
+/// `403` is a `Forbidden` error carrying the answer body as received.
 ///
 /// Docs text §HTTP status codes: `403` "The service understood the request but
-/// refuses to authorize it".
+/// refuses to authorize it". The body is the service's own text, kept whole
+/// even when it is not an ITS-REST `Error`.
 #[tokio::test]
-async fn forbidden_is_an_error() -> TestResult {
+async fn forbidden_is_an_error_carrying_the_body() -> TestResult {
     let server = MockServer::start().await;
     Mock::given(method("DELETE"))
         .and(path(format!("/admin/ehr/{EHR_ID}")))
-        .respond_with(ResponseTemplate::new(403))
+        .respond_with(
+            ResponseTemplate::new(403)
+                .set_body_raw("<html>the admin API is disabled</html>", "text/html"),
+        )
         .expect(1)
         .mount(&server)
         .await;
@@ -876,10 +1059,41 @@ async fn forbidden_is_an_error() -> TestResult {
             ehr_id: EHR_ID.to_owned(),
         })
         .await;
-    assert!(
-        matches!(refused, Err(ClientError::Forbidden { .. })),
-        "expected a forbidden error, got {refused:?}"
-    );
+    let body = match refused {
+        Err(ClientError::Forbidden { body, .. }) => body,
+        other => panic!("expected a forbidden error, got {other:?}"),
+    };
+    assert!(body.error().is_none(), "an HTML body is not an Error");
+    assert_eq!(body.text(), Some("<html>the admin API is disabled</html>"));
+    Ok(())
+}
+
+/// A `5xx` is a `ServiceFailure` error carrying the answer body.
+///
+/// Docs text §HTTP status codes lists `500` for every operation; the body the
+/// service sent is kept so the caller can log the service's own account.
+#[tokio::test]
+async fn a_service_failure_carries_the_body() -> TestResult {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path(format!("/ehr/{EHR_ID}")))
+        .respond_with(ResponseTemplate::new(500).set_body_json(error_body("the pool is exhausted")))
+        .expect(1)
+        .mount(&server)
+        .await;
+    let client = client_for(&server)?.with_retry(RetryPolicy {
+        max_attempts: 1,
+        ..fast_retry()
+    });
+    let refused = ehr::client::EhrClient::new(&client)
+        .ehr_get_by_id(&get_ehr(EHR_ID))
+        .await;
+    let (status, body) = match refused {
+        Err(ClientError::ServiceFailure { status, body, .. }) => (status, body),
+        other => panic!("expected a service failure, got {other:?}"),
+    };
+    assert_eq!(status, StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(body.message(), Some("the pool is exhausted"));
     Ok(())
 }
 
@@ -934,6 +1148,8 @@ async fn a_post_is_never_retried() -> TestResult {
         prefer: None,
         accept: None,
         content_type: None,
+        openehr_version: None,
+        openehr_audit_details: None,
     };
     let refused = ehr::client::EhrClient::new(&client)
         .ehr_create(&params, None)
@@ -1003,7 +1219,7 @@ async fn accept_defaults_to_canonical_json() -> TestResult {
         .ehr_get_by_id(&get_ehr(EHR_ID))
         .await?;
     assert!(
-        matches!(outcome, ehr::client::EhrGetByIdOutcome::NotFound),
+        matches!(outcome, ehr::client::EhrGetByIdOutcome::NotFound { .. }),
         "expected the 404 answer, got {outcome:?}"
     );
     Ok(())
@@ -1031,7 +1247,7 @@ async fn an_explicit_accept_replaces_the_default() -> TestResult {
         .ehr_get_by_id(&params)
         .await?;
     assert!(
-        matches!(outcome, ehr::client::EhrGetByIdOutcome::NotFound),
+        matches!(outcome, ehr::client::EhrGetByIdOutcome::NotFound { .. }),
         "expected the 404 answer, got {outcome:?}"
     );
     Ok(())
@@ -1050,15 +1266,12 @@ async fn basic_credentials_send_the_rfc_7617_header() -> TestResult {
         .expect(1)
         .mount(&server)
         .await;
-    let client = client_for(&server)?.with_credentials(Credentials::Basic {
-        user: "alice".to_owned(),
-        password: "hunter2".to_owned(),
-    });
+    let client = client_for(&server)?.with_credentials(Credentials::basic("alice", "hunter2"));
     let outcome = ehr::client::EhrClient::new(&client)
         .ehr_get_by_id(&get_ehr(EHR_ID))
         .await?;
     assert!(
-        matches!(outcome, ehr::client::EhrGetByIdOutcome::NotFound),
+        matches!(outcome, ehr::client::EhrGetByIdOutcome::NotFound { .. }),
         "expected the 404 answer, got {outcome:?}"
     );
     Ok(())
@@ -1077,13 +1290,12 @@ async fn bearer_credentials_send_the_rfc_6750_header() -> TestResult {
         .expect(1)
         .mount(&server)
         .await;
-    let client =
-        client_for(&server)?.with_credentials(Credentials::Bearer("eyJ.test.token".to_owned()));
+    let client = client_for(&server)?.with_credentials(Credentials::bearer("eyJ.test.token"));
     let outcome = ehr::client::EhrClient::new(&client)
         .ehr_get_by_id(&get_ehr(EHR_ID))
         .await?;
     assert!(
-        matches!(outcome, ehr::client::EhrGetByIdOutcome::NotFound),
+        matches!(outcome, ehr::client::EhrGetByIdOutcome::NotFound { .. }),
         "expected the 404 answer, got {outcome:?}"
     );
     Ok(())
@@ -1106,7 +1318,7 @@ async fn a_path_parameter_is_percent_encoded() -> TestResult {
         .ehr_get_by_id(&get_ehr("has space"))
         .await?;
     assert!(
-        matches!(outcome, ehr::client::EhrGetByIdOutcome::NotFound),
+        matches!(outcome, ehr::client::EhrGetByIdOutcome::NotFound { .. }),
         "expected the 404 answer, got {outcome:?}"
     );
     Ok(())
@@ -1134,7 +1346,7 @@ async fn a_base_path_is_kept_without_doubling_the_slash() -> TestResult {
             .ehr_get_by_id(&get_ehr(EHR_ID))
             .await?;
         assert!(
-            matches!(outcome, ehr::client::EhrGetByIdOutcome::NotFound),
+            matches!(outcome, ehr::client::EhrGetByIdOutcome::NotFound { .. }),
             "expected the 404 answer under {base}, got {outcome:?}"
         );
     }

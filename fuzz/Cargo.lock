@@ -1365,7 +1365,7 @@ checksum = "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50"
 
 [[package]]
 name = "openehr-adl"
-version = "0.0.71"
+version = "0.0.72"
 dependencies = [
  "indexmap",
  "openehr-am",
@@ -1381,7 +1381,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-am"
-version = "0.0.71"
+version = "0.0.72"
 dependencies = [
  "openehr-base",
  "openehr-lang",
@@ -1391,7 +1391,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-base"
-version = "0.0.71"
+version = "0.0.72"
 dependencies = [
  "serde",
  "serde_json",
@@ -1401,7 +1401,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-its"
-version = "0.0.71"
+version = "0.0.72"
 dependencies = [
  "async-trait",
  "axum",
@@ -1417,6 +1417,7 @@ dependencies = [
  "openehr-term",
  "quick-xml",
  "reqwest",
+ "secrecy",
  "serde",
  "serde_json",
  "serde_path_to_error",
@@ -1428,7 +1429,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-lang"
-version = "0.0.71"
+version = "0.0.72"
 dependencies = [
  "chumsky",
  "indexmap",
@@ -1441,7 +1442,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-query"
-version = "0.0.71"
+version = "0.0.72"
 dependencies = [
  "chumsky",
  "logos",
@@ -1450,7 +1451,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-rm"
-version = "0.0.71"
+version = "0.0.72"
 dependencies = [
  "openehr-base",
  "openehr-term",
@@ -1465,7 +1466,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-sdt"
-version = "0.0.71"
+version = "0.0.72"
 dependencies = [
  "fancy-regex",
  "indexmap",
@@ -1485,7 +1486,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-term"
-version = "0.0.71"
+version = "0.0.72"
 dependencies = [
  "openehr-base",
  "roxmltree",
@@ -2063,6 +2064,15 @@ name = "scopeguard"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
+
+[[package]]
+name = "secrecy"
+version = "0.10.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e891af845473308773346dc847b2c23ee78fe442e0472ac50e22a18a93d3ae5a"
+dependencies = [
+ "zeroize",
+]
 
 [[package]]
 name = "security-framework"

@@ -197,6 +197,18 @@ pub struct EhrCreateParams {
     #[serde(skip_serializing_if = "Option::is_none")]
     /// `Content-Type` (header)
     pub content_type: Option<String>,
+    #[serde(rename = "openehr-version")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    /// `openehr-version` (header)
+    /// DEFINED by the docs text — ITS-REST `docs/overview/Requests_and_responses.md` §openehr-version and openehr-audit-details — "services MUST accept `openehr-version` and `openehr-audit-details` custom request headers" on the `PUT`, `POST` and `DELETE` methods of every change-controlled resource
+    /// (The VERSION attributes of the commit (`lifecycle_state.code_string="532"`); the OAS declares no parameter for it.)
+    pub openehr_version: Option<String>,
+    #[serde(rename = "openehr-audit-details")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    /// `openehr-audit-details` (header)
+    /// DEFINED by the docs text — ITS-REST `docs/overview/Requests_and_responses.md` §openehr-version and openehr-audit-details — the same mandate; the section's example sends the header as several field lines, one per AUDIT_DETAILS attribute
+    /// (The AUDIT_DETAILS attributes of the commit (`change_type`, `description`, `committer`, `system_id`); the OAS declares no parameter for it.)
+    pub openehr_audit_details: Option<Vec<String>>,
 }
 
 /// Parameters for `ehr_get_by_id` (path/query/header).
@@ -227,6 +239,18 @@ pub struct EhrCreateWithIdParams {
     #[serde(skip_serializing_if = "Option::is_none")]
     /// `Content-Type` (header)
     pub content_type: Option<String>,
+    #[serde(rename = "openehr-version")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    /// `openehr-version` (header)
+    /// DEFINED by the docs text — ITS-REST `docs/overview/Requests_and_responses.md` §openehr-version and openehr-audit-details — "services MUST accept `openehr-version` and `openehr-audit-details` custom request headers" on the `PUT`, `POST` and `DELETE` methods of every change-controlled resource
+    /// (The VERSION attributes of the commit (`lifecycle_state.code_string="532"`); the OAS declares no parameter for it.)
+    pub openehr_version: Option<String>,
+    #[serde(rename = "openehr-audit-details")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    /// `openehr-audit-details` (header)
+    /// DEFINED by the docs text — ITS-REST `docs/overview/Requests_and_responses.md` §openehr-version and openehr-audit-details — the same mandate; the section's example sends the header as several field lines, one per AUDIT_DETAILS attribute
+    /// (The AUDIT_DETAILS attributes of the commit (`change_type`, `description`, `committer`, `system_id`); the OAS declares no parameter for it.)
+    pub openehr_audit_details: Option<Vec<String>>,
 }
 
 /// Parameters for `ehr_status_get_by_version_id` (path/query/header).
@@ -284,6 +308,18 @@ pub struct EhrStatusUpdateParams {
     #[serde(skip_serializing_if = "Option::is_none")]
     /// `openehr-version-item-tag` (header)
     pub openehr_version_item_tag: Option<Vec<String>>,
+    #[serde(rename = "openehr-version")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    /// `openehr-version` (header)
+    /// DEFINED by the docs text — ITS-REST `docs/overview/Requests_and_responses.md` §openehr-version and openehr-audit-details — "services MUST accept `openehr-version` and `openehr-audit-details` custom request headers" on the `PUT`, `POST` and `DELETE` methods of every change-controlled resource
+    /// (The VERSION attributes of the commit (`lifecycle_state.code_string="532"`); the OAS declares no parameter for it.)
+    pub openehr_version: Option<String>,
+    #[serde(rename = "openehr-audit-details")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    /// `openehr-audit-details` (header)
+    /// DEFINED by the docs text — ITS-REST `docs/overview/Requests_and_responses.md` §openehr-version and openehr-audit-details — the same mandate; the section's example sends the header as several field lines, one per AUDIT_DETAILS attribute
+    /// (The AUDIT_DETAILS attributes of the commit (`change_type`, `description`, `committer`, `system_id`); the OAS declares no parameter for it.)
+    pub openehr_audit_details: Option<Vec<String>>,
 }
 
 /// Parameters for `versioned_ehr_status_get` (path/query/header).
@@ -376,6 +412,24 @@ pub struct CompositionCreateParams {
     #[serde(skip_serializing_if = "Option::is_none")]
     /// `openehr-version-item-tag` (header)
     pub openehr_version_item_tag: Option<Vec<String>>,
+    #[serde(rename = "openehr-version")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    /// `openehr-version` (header)
+    /// DEFINED by the docs text — ITS-REST `docs/overview/Requests_and_responses.md` §openehr-version and openehr-audit-details — "services MUST accept `openehr-version` and `openehr-audit-details` custom request headers" on the `PUT`, `POST` and `DELETE` methods of every change-controlled resource
+    /// (The VERSION attributes of the commit (`lifecycle_state.code_string="532"`); the OAS declares no parameter for it.)
+    pub openehr_version: Option<String>,
+    #[serde(rename = "openehr-audit-details")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    /// `openehr-audit-details` (header)
+    /// DEFINED by the docs text — ITS-REST `docs/overview/Requests_and_responses.md` §openehr-version and openehr-audit-details — the same mandate; the section's example sends the header as several field lines, one per AUDIT_DETAILS attribute
+    /// (The AUDIT_DETAILS attributes of the commit (`change_type`, `description`, `committer`, `system_id`); the OAS declares no parameter for it.)
+    pub openehr_audit_details: Option<Vec<String>>,
+    #[serde(rename = "openehr-template-id")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    /// `openehr-template-id` (header)
+    /// DEFINED by the docs text — ITS-REST `docs/overview/Requests_and_responses.md` §openehr-template-id — "MUST be used whenever committing COMPOSITION (via `PUT` or `POST` methods) using a Simplified Format which does not support TEMPLATE_ID value"; a CONTRIBUTION `POST` commits COMPOSITIONs too
+    /// (The template a Simplified Formats COMPOSITION body is validated against; the OAS declares no parameter for it.)
+    pub openehr_template_id: Option<String>,
 }
 
 /// Parameters for `composition_get` (path/query/header).
@@ -424,6 +478,24 @@ pub struct CompositionUpdateParams {
     #[serde(skip_serializing_if = "Option::is_none")]
     /// `openehr-version-item-tag` (header)
     pub openehr_version_item_tag: Option<Vec<String>>,
+    #[serde(rename = "openehr-version")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    /// `openehr-version` (header)
+    /// DEFINED by the docs text — ITS-REST `docs/overview/Requests_and_responses.md` §openehr-version and openehr-audit-details — "services MUST accept `openehr-version` and `openehr-audit-details` custom request headers" on the `PUT`, `POST` and `DELETE` methods of every change-controlled resource
+    /// (The VERSION attributes of the commit (`lifecycle_state.code_string="532"`); the OAS declares no parameter for it.)
+    pub openehr_version: Option<String>,
+    #[serde(rename = "openehr-audit-details")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    /// `openehr-audit-details` (header)
+    /// DEFINED by the docs text — ITS-REST `docs/overview/Requests_and_responses.md` §openehr-version and openehr-audit-details — the same mandate; the section's example sends the header as several field lines, one per AUDIT_DETAILS attribute
+    /// (The AUDIT_DETAILS attributes of the commit (`change_type`, `description`, `committer`, `system_id`); the OAS declares no parameter for it.)
+    pub openehr_audit_details: Option<Vec<String>>,
+    #[serde(rename = "openehr-template-id")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    /// `openehr-template-id` (header)
+    /// DEFINED by the docs text — ITS-REST `docs/overview/Requests_and_responses.md` §openehr-template-id — "MUST be used whenever committing COMPOSITION (via `PUT` or `POST` methods) using a Simplified Format which does not support TEMPLATE_ID value"; a CONTRIBUTION `POST` commits COMPOSITIONs too
+    /// (The template a Simplified Formats COMPOSITION body is validated against; the OAS declares no parameter for it.)
+    pub openehr_template_id: Option<String>,
 }
 
 /// Parameters for `composition_delete` (path/query/header).
@@ -433,6 +505,18 @@ pub struct CompositionDeleteParams {
     pub ehr_id: String,
     /// `uid_based_id` (path)
     pub uid_based_id: String,
+    #[serde(rename = "openehr-version")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    /// `openehr-version` (header)
+    /// DEFINED by the docs text — ITS-REST `docs/overview/Requests_and_responses.md` §openehr-version and openehr-audit-details — "services MUST accept `openehr-version` and `openehr-audit-details` custom request headers" on the `PUT`, `POST` and `DELETE` methods of every change-controlled resource
+    /// (The VERSION attributes of the commit (`lifecycle_state.code_string="532"`); the OAS declares no parameter for it.)
+    pub openehr_version: Option<String>,
+    #[serde(rename = "openehr-audit-details")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    /// `openehr-audit-details` (header)
+    /// DEFINED by the docs text — ITS-REST `docs/overview/Requests_and_responses.md` §openehr-version and openehr-audit-details — the same mandate; the section's example sends the header as several field lines, one per AUDIT_DETAILS attribute
+    /// (The AUDIT_DETAILS attributes of the commit (`change_type`, `description`, `committer`, `system_id`); the OAS declares no parameter for it.)
+    pub openehr_audit_details: Option<Vec<String>>,
 }
 
 /// Parameters for `versioned_composition_get` (path/query/header).
@@ -545,6 +629,18 @@ pub struct DirectoryUpdateParams {
     #[serde(skip_serializing_if = "Option::is_none")]
     /// `Content-Type` (header)
     pub content_type: Option<String>,
+    #[serde(rename = "openehr-version")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    /// `openehr-version` (header)
+    /// DEFINED by the docs text — ITS-REST `docs/overview/Requests_and_responses.md` §openehr-version and openehr-audit-details — "services MUST accept `openehr-version` and `openehr-audit-details` custom request headers" on the `PUT`, `POST` and `DELETE` methods of every change-controlled resource
+    /// (The VERSION attributes of the commit (`lifecycle_state.code_string="532"`); the OAS declares no parameter for it.)
+    pub openehr_version: Option<String>,
+    #[serde(rename = "openehr-audit-details")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    /// `openehr-audit-details` (header)
+    /// DEFINED by the docs text — ITS-REST `docs/overview/Requests_and_responses.md` §openehr-version and openehr-audit-details — the same mandate; the section's example sends the header as several field lines, one per AUDIT_DETAILS attribute
+    /// (The AUDIT_DETAILS attributes of the commit (`change_type`, `description`, `committer`, `system_id`); the OAS declares no parameter for it.)
+    pub openehr_audit_details: Option<Vec<String>>,
 }
 
 /// Parameters for `directory_create` (path/query/header).
@@ -564,6 +660,18 @@ pub struct DirectoryCreateParams {
     #[serde(skip_serializing_if = "Option::is_none")]
     /// `Content-Type` (header)
     pub content_type: Option<String>,
+    #[serde(rename = "openehr-version")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    /// `openehr-version` (header)
+    /// DEFINED by the docs text — ITS-REST `docs/overview/Requests_and_responses.md` §openehr-version and openehr-audit-details — "services MUST accept `openehr-version` and `openehr-audit-details` custom request headers" on the `PUT`, `POST` and `DELETE` methods of every change-controlled resource
+    /// (The VERSION attributes of the commit (`lifecycle_state.code_string="532"`); the OAS declares no parameter for it.)
+    pub openehr_version: Option<String>,
+    #[serde(rename = "openehr-audit-details")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    /// `openehr-audit-details` (header)
+    /// DEFINED by the docs text — ITS-REST `docs/overview/Requests_and_responses.md` §openehr-version and openehr-audit-details — the same mandate; the section's example sends the header as several field lines, one per AUDIT_DETAILS attribute
+    /// (The AUDIT_DETAILS attributes of the commit (`change_type`, `description`, `committer`, `system_id`); the OAS declares no parameter for it.)
+    pub openehr_audit_details: Option<Vec<String>>,
 }
 
 /// Parameters for `directory_delete` (path/query/header).
@@ -574,6 +682,18 @@ pub struct DirectoryDeleteParams {
     #[serde(rename = "If-Match")]
     /// `If-Match` (header)
     pub if_match: String,
+    #[serde(rename = "openehr-version")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    /// `openehr-version` (header)
+    /// DEFINED by the docs text — ITS-REST `docs/overview/Requests_and_responses.md` §openehr-version and openehr-audit-details — "services MUST accept `openehr-version` and `openehr-audit-details` custom request headers" on the `PUT`, `POST` and `DELETE` methods of every change-controlled resource
+    /// (The VERSION attributes of the commit (`lifecycle_state.code_string="532"`); the OAS declares no parameter for it.)
+    pub openehr_version: Option<String>,
+    #[serde(rename = "openehr-audit-details")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    /// `openehr-audit-details` (header)
+    /// DEFINED by the docs text — ITS-REST `docs/overview/Requests_and_responses.md` §openehr-version and openehr-audit-details — the same mandate; the section's example sends the header as several field lines, one per AUDIT_DETAILS attribute
+    /// (The AUDIT_DETAILS attributes of the commit (`change_type`, `description`, `committer`, `system_id`); the OAS declares no parameter for it.)
+    pub openehr_audit_details: Option<Vec<String>>,
 }
 
 /// Parameters for `directory_get_by_version_id` (path/query/header).
@@ -609,6 +729,12 @@ pub struct ContributionCreateParams {
     #[serde(skip_serializing_if = "Option::is_none")]
     /// `Content-Type` (header)
     pub content_type: Option<String>,
+    #[serde(rename = "openehr-template-id")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    /// `openehr-template-id` (header)
+    /// DEFINED by the docs text — ITS-REST `docs/overview/Requests_and_responses.md` §openehr-template-id — "MUST be used whenever committing COMPOSITION (via `PUT` or `POST` methods) using a Simplified Format which does not support TEMPLATE_ID value"; a CONTRIBUTION `POST` commits COMPOSITIONs too
+    /// (The template a Simplified Formats COMPOSITION body is validated against; the OAS declares no parameter for it.)
+    pub openehr_template_id: Option<String>,
 }
 
 /// Parameters for `contribution_get` (path/query/header).
@@ -1031,7 +1157,10 @@ pub mod client {
             headers: EhrGetBySubjectOkHeaders,
         },
         /// The `404` answer.
-        NotFound,
+        NotFound {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The response headers the OAS declares for the `201` answer of
@@ -1072,11 +1201,14 @@ pub mod client {
         },
         /// The `400` answer.
         BadRequest {
-            /// The body, decoded from canonical JSON; `None` when the service sent none.
-            body: Option<super::super::common::Error>,
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
         },
         /// The `409` answer.
-        Conflict,
+        Conflict {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The response headers the OAS declares for the `200` answer of
@@ -1099,7 +1231,10 @@ pub mod client {
             headers: EhrGetByIdOkHeaders,
         },
         /// The `404` answer.
-        NotFound,
+        NotFound {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The response headers the OAS declares for the `201` answer of
@@ -1140,11 +1275,14 @@ pub mod client {
         },
         /// The `400` answer.
         BadRequest {
-            /// The body, decoded from canonical JSON; `None` when the service sent none.
-            body: Option<super::super::common::Error>,
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
         },
         /// The `409` answer.
-        Conflict,
+        Conflict {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The response headers the OAS declares for the `200` answer of
@@ -1175,7 +1313,10 @@ pub mod client {
             headers: EhrStatusGetByVersionIdOkHeaders,
         },
         /// The `404` answer.
-        NotFound,
+        NotFound {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The response headers the OAS declares for the `200` answer of
@@ -1207,11 +1348,14 @@ pub mod client {
         },
         /// The `400` answer.
         BadRequest {
-            /// The body, decoded from canonical JSON; `None` when the service sent none.
-            body: Option<super::super::common::Error>,
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
         },
         /// The `404` answer.
-        NotFound,
+        NotFound {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The response headers the OAS declares for the `200` answer of
@@ -1272,13 +1416,18 @@ pub mod client {
         },
         /// The `400` answer.
         BadRequest {
-            /// The body, decoded from canonical JSON; `None` when the service sent none.
-            body: Option<super::super::common::Error>,
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
         },
         /// The `404` answer.
-        NotFound,
+        NotFound {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
         /// The `412` answer.
         PreconditionFailed {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
             /// The response headers the OAS declares for this answer.
             headers: EhrStatusUpdatePreconditionFailedHeaders,
         },
@@ -1304,7 +1453,10 @@ pub mod client {
             headers: VersionedEhrStatusGetOkHeaders,
         },
         /// The `404` answer.
-        NotFound,
+        NotFound {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The response headers the OAS declares for the `200` answer of
@@ -1327,7 +1479,10 @@ pub mod client {
             headers: VersionedEhrStatusRevisionHistoryOkHeaders,
         },
         /// The `404` answer.
-        NotFound,
+        NotFound {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The response headers the OAS declares for the `200` answer of
@@ -1355,11 +1510,14 @@ pub mod client {
         },
         /// The `400` answer.
         BadRequest {
-            /// The body, decoded from canonical JSON; `None` when the service sent none.
-            body: Option<super::super::common::Error>,
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
         },
         /// The `404` answer.
-        NotFound,
+        NotFound {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The response headers the OAS declares for the `200` answer of
@@ -1382,7 +1540,10 @@ pub mod client {
             headers: VersionedEhrStatusVersionGetByIdOkHeaders,
         },
         /// The `404` answer.
-        NotFound,
+        NotFound {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The response headers the OAS declares for the `201` answer of
@@ -1435,13 +1596,19 @@ pub mod client {
         },
         /// The `400` answer.
         BadRequest {
-            /// The body, decoded from canonical JSON; `None` when the service sent none.
-            body: Option<super::super::common::Error>,
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
         },
         /// The `404` answer.
-        NotFound,
+        NotFound {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
         /// The `422` answer.
-        UnprocessableEntity,
+        UnprocessableEntity {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The response headers the OAS declares for the `200` answer of
@@ -1474,7 +1641,10 @@ pub mod client {
         /// The `204` answer.
         NoContent,
         /// The `404` answer.
-        NotFound,
+        NotFound {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The response headers the OAS declares for the `200` answer of
@@ -1535,18 +1705,26 @@ pub mod client {
         },
         /// The `400` answer.
         BadRequest {
-            /// The body, decoded from canonical JSON; `None` when the service sent none.
-            body: Option<super::super::common::Error>,
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
         },
         /// The `404` answer.
-        NotFound,
+        NotFound {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
         /// The `412` answer.
         PreconditionFailed {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
             /// The response headers the OAS declares for this answer.
             headers: CompositionUpdatePreconditionFailedHeaders,
         },
         /// The `422` answer.
-        UnprocessableEntity,
+        UnprocessableEntity {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The response headers the OAS declares for the `204` answer of
@@ -1579,11 +1757,19 @@ pub mod client {
             headers: CompositionDeleteNoContentHeaders,
         },
         /// The `400` answer.
-        BadRequest,
+        BadRequest {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
         /// The `404` answer.
-        NotFound,
+        NotFound {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
         /// The `409` answer.
         Conflict {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
             /// The response headers the OAS declares for this answer.
             headers: CompositionDeleteConflictHeaders,
         },
@@ -1609,7 +1795,10 @@ pub mod client {
             headers: VersionedCompositionGetOkHeaders,
         },
         /// The `404` answer.
-        NotFound,
+        NotFound {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The response headers the OAS declares for the `200` answer of
@@ -1632,7 +1821,10 @@ pub mod client {
             headers: VersionedCompositionRevisionHistoryOkHeaders,
         },
         /// The `404` answer.
-        NotFound,
+        NotFound {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The response headers the OAS declares for the `200` answer of
@@ -1659,7 +1851,10 @@ pub mod client {
             headers: VersionedCompositionVersionGetAtTimeOkHeaders,
         },
         /// The `404` answer.
-        NotFound,
+        NotFound {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The response headers the OAS declares for the `200` answer of
@@ -1682,7 +1877,10 @@ pub mod client {
             headers: VersionedCompositionVersionGetByIdOkHeaders,
         },
         /// The `404` answer.
-        NotFound,
+        NotFound {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The response headers the OAS declares for the `200` answer of
@@ -1707,7 +1905,10 @@ pub mod client {
         /// The `204` answer.
         NoContent,
         /// The `404` answer.
-        NotFound,
+        NotFound {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The response headers the OAS declares for the `200` answer of
@@ -1764,13 +1965,18 @@ pub mod client {
         },
         /// The `400` answer.
         BadRequest {
-            /// The body, decoded from canonical JSON; `None` when the service sent none.
-            body: Option<super::super::common::Error>,
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
         },
         /// The `404` answer.
-        NotFound,
+        NotFound {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
         /// The `412` answer.
         PreconditionFailed {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
             /// The response headers the OAS declares for this answer.
             headers: DirectoryUpdatePreconditionFailedHeaders,
         },
@@ -1818,11 +2024,14 @@ pub mod client {
         },
         /// The `400` answer.
         BadRequest {
-            /// The body, decoded from canonical JSON; `None` when the service sent none.
-            body: Option<super::super::common::Error>,
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
         },
         /// The `404` answer.
-        NotFound,
+        NotFound {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The response headers the OAS declares for the `412` answer of
@@ -1843,13 +2052,18 @@ pub mod client {
         NoContent,
         /// The `400` answer.
         BadRequest {
-            /// The body, decoded from canonical JSON; `None` when the service sent none.
-            body: Option<super::super::common::Error>,
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
         },
         /// The `404` answer.
-        NotFound,
+        NotFound {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
         /// The `412` answer.
         PreconditionFailed {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
             /// The response headers the OAS declares for this answer.
             headers: DirectoryDeletePreconditionFailedHeaders,
         },
@@ -1875,7 +2089,10 @@ pub mod client {
             headers: DirectoryGetByVersionIdOkHeaders,
         },
         /// The `404` answer.
-        NotFound,
+        NotFound {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The response headers the OAS declares for the `201` answer of
@@ -1920,13 +2137,19 @@ pub mod client {
         },
         /// The `400` answer.
         BadRequest {
-            /// The body, decoded from canonical JSON; `None` when the service sent none.
-            body: Option<super::super::common::Error>,
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
         },
         /// The `404` answer.
-        NotFound,
+        NotFound {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
         /// The `409` answer.
-        Conflict,
+        Conflict {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The response headers the OAS declares for the `200` answer of
@@ -1949,7 +2172,10 @@ pub mod client {
             headers: ContributionGetOkHeaders,
         },
         /// The `404` answer.
-        NotFound,
+        NotFound {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The response headers the OAS declares for the `200` answer of
@@ -1973,11 +2199,14 @@ pub mod client {
         },
         /// The `400` answer.
         BadRequest {
-            /// The body, decoded from canonical JSON; `None` when the service sent none.
-            body: Option<super::super::common::Error>,
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
         },
         /// The `404` answer.
-        NotFound,
+        NotFound {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The response headers the OAS declares for the `200` answer of
@@ -2000,7 +2229,10 @@ pub mod client {
             headers: CompositionTagsGetOkHeaders,
         },
         /// The `404` answer.
-        NotFound,
+        NotFound {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The response headers the OAS declares for the `200` answer of
@@ -2026,11 +2258,14 @@ pub mod client {
         NoContent,
         /// The `400` answer.
         BadRequest {
-            /// The body, decoded from canonical JSON; `None` when the service sent none.
-            body: Option<super::super::common::Error>,
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
         },
         /// The `404` answer.
-        NotFound,
+        NotFound {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The outcome of `DELETE /ehr/{ehr_id}/composition/{uid_based_id}/tags/{key}`: one variant per status the OAS documents.
@@ -2040,7 +2275,10 @@ pub mod client {
         /// The `204` answer.
         NoContent,
         /// The `404` answer.
-        NotFound,
+        NotFound {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The response headers the OAS declares for the `200` answer of
@@ -2063,7 +2301,10 @@ pub mod client {
             headers: EhrStatusTagsGetOkHeaders,
         },
         /// The `404` answer.
-        NotFound,
+        NotFound {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The response headers the OAS declares for the `200` answer of
@@ -2089,11 +2330,14 @@ pub mod client {
         NoContent,
         /// The `400` answer.
         BadRequest {
-            /// The body, decoded from canonical JSON; `None` when the service sent none.
-            body: Option<super::super::common::Error>,
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
         },
         /// The `404` answer.
-        NotFound,
+        NotFound {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The outcome of `DELETE /ehr/{ehr_id}/ehr_status/{uid_based_id}/tags/{key}`: one variant per status the OAS documents.
@@ -2103,7 +2347,10 @@ pub mod client {
         /// The `204` answer.
         NoContent,
         /// The `404` answer.
-        NotFound,
+        NotFound {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The `ehr` API group over one configured CDR.
@@ -2150,7 +2397,9 @@ pub mod client {
                         content_type: answer.header("Content-Type"),
                     },
                 }),
-                http::StatusCode::NOT_FOUND => Ok(EhrGetBySubjectOutcome::NotFound),
+                http::StatusCode::NOT_FOUND => Ok(EhrGetBySubjectOutcome::NotFound {
+                    body: answer.error_body(),
+                }),
                 _ => Err(answer.into_undocumented()),
             }
         }
@@ -2177,6 +2426,14 @@ pub mod client {
             if let Some(value) = params.content_type.as_ref() {
                 request.header("Content-Type", &value.to_string())?;
             }
+            if let Some(value) = params.openehr_version.as_ref() {
+                request.header("openehr-version", &value.to_string())?;
+            }
+            if let Some(value) = params.openehr_audit_details.as_ref() {
+                for item in value {
+                    request.header("openehr-audit-details", &item.to_string())?;
+                }
+            }
             if let Some(body) = body {
                 request.json_body(body, params.content_type.as_deref())?;
             }
@@ -2196,9 +2453,11 @@ pub mod client {
                     },
                 }),
                 http::StatusCode::BAD_REQUEST => Ok(EhrCreateOutcome::BadRequest {
-                    body: answer.optional_json()?,
+                    body: answer.error_body(),
                 }),
-                http::StatusCode::CONFLICT => Ok(EhrCreateOutcome::Conflict),
+                http::StatusCode::CONFLICT => Ok(EhrCreateOutcome::Conflict {
+                    body: answer.error_body(),
+                }),
                 _ => Err(answer.into_undocumented()),
             }
         }
@@ -2228,7 +2487,9 @@ pub mod client {
                         content_type: answer.header("Content-Type"),
                     },
                 }),
-                http::StatusCode::NOT_FOUND => Ok(EhrGetByIdOutcome::NotFound),
+                http::StatusCode::NOT_FOUND => Ok(EhrGetByIdOutcome::NotFound {
+                    body: answer.error_body(),
+                }),
                 _ => Err(answer.into_undocumented()),
             }
         }
@@ -2257,6 +2518,14 @@ pub mod client {
             if let Some(value) = params.content_type.as_ref() {
                 request.header("Content-Type", &value.to_string())?;
             }
+            if let Some(value) = params.openehr_version.as_ref() {
+                request.header("openehr-version", &value.to_string())?;
+            }
+            if let Some(value) = params.openehr_audit_details.as_ref() {
+                for item in value {
+                    request.header("openehr-audit-details", &item.to_string())?;
+                }
+            }
             if let Some(body) = body {
                 request.json_body(body, params.content_type.as_deref())?;
             }
@@ -2276,9 +2545,11 @@ pub mod client {
                     },
                 }),
                 http::StatusCode::BAD_REQUEST => Ok(EhrCreateWithIdOutcome::BadRequest {
-                    body: answer.optional_json()?,
+                    body: answer.error_body(),
                 }),
-                http::StatusCode::CONFLICT => Ok(EhrCreateWithIdOutcome::Conflict),
+                http::StatusCode::CONFLICT => Ok(EhrCreateWithIdOutcome::Conflict {
+                    body: answer.error_body(),
+                }),
                 _ => Err(answer.into_undocumented()),
             }
         }
@@ -2316,7 +2587,9 @@ pub mod client {
                         openehr_version_item_tag: answer.header_all("openehr-version-item-tag"),
                     },
                 }),
-                http::StatusCode::NOT_FOUND => Ok(EhrStatusGetByVersionIdOutcome::NotFound),
+                http::StatusCode::NOT_FOUND => Ok(EhrStatusGetByVersionIdOutcome::NotFound {
+                    body: answer.error_body(),
+                }),
                 _ => Err(answer.into_undocumented()),
             }
         }
@@ -2357,9 +2630,11 @@ pub mod client {
                     },
                 }),
                 http::StatusCode::BAD_REQUEST => Ok(EhrStatusGetAtTimeOutcome::BadRequest {
-                    body: answer.optional_json()?,
+                    body: answer.error_body(),
                 }),
-                http::StatusCode::NOT_FOUND => Ok(EhrStatusGetAtTimeOutcome::NotFound),
+                http::StatusCode::NOT_FOUND => Ok(EhrStatusGetAtTimeOutcome::NotFound {
+                    body: answer.error_body(),
+                }),
                 _ => Err(answer.into_undocumented()),
             }
         }
@@ -2405,6 +2680,14 @@ pub mod client {
                     request.header("openehr-version-item-tag", &item.to_string())?;
                 }
             }
+            if let Some(value) = params.openehr_version.as_ref() {
+                request.header("openehr-version", &value.to_string())?;
+            }
+            if let Some(value) = params.openehr_audit_details.as_ref() {
+                for item in value {
+                    request.header("openehr-audit-details", &item.to_string())?;
+                }
+            }
             request.json_body(body, params.content_type.as_deref())?;
             let answer = self.client.execute(request).await?;
             match answer.status() {
@@ -2427,11 +2710,14 @@ pub mod client {
                     },
                 }),
                 http::StatusCode::BAD_REQUEST => Ok(EhrStatusUpdateOutcome::BadRequest {
-                    body: answer.optional_json()?,
+                    body: answer.error_body(),
                 }),
-                http::StatusCode::NOT_FOUND => Ok(EhrStatusUpdateOutcome::NotFound),
+                http::StatusCode::NOT_FOUND => Ok(EhrStatusUpdateOutcome::NotFound {
+                    body: answer.error_body(),
+                }),
                 http::StatusCode::PRECONDITION_FAILED => {
                     Ok(EhrStatusUpdateOutcome::PreconditionFailed {
+                        body: answer.error_body(),
                         headers: EhrStatusUpdatePreconditionFailedHeaders {
                             etag: answer.header("ETag"),
                             location: answer.header("Location"),
@@ -2473,7 +2759,9 @@ pub mod client {
                         content_type: answer.header("Content-Type"),
                     },
                 }),
-                http::StatusCode::NOT_FOUND => Ok(VersionedEhrStatusGetOutcome::NotFound),
+                http::StatusCode::NOT_FOUND => Ok(VersionedEhrStatusGetOutcome::NotFound {
+                    body: answer.error_body(),
+                }),
                 _ => Err(answer.into_undocumented()),
             }
         }
@@ -2511,7 +2799,9 @@ pub mod client {
                     },
                 }),
                 http::StatusCode::NOT_FOUND => {
-                    Ok(VersionedEhrStatusRevisionHistoryOutcome::NotFound)
+                    Ok(VersionedEhrStatusRevisionHistoryOutcome::NotFound {
+                        body: answer.error_body(),
+                    })
                 }
                 _ => Err(answer.into_undocumented()),
             }
@@ -2556,11 +2846,13 @@ pub mod client {
                 }),
                 http::StatusCode::BAD_REQUEST => {
                     Ok(VersionedEhrStatusVersionGetAtTimeOutcome::BadRequest {
-                        body: answer.optional_json()?,
+                        body: answer.error_body(),
                     })
                 }
                 http::StatusCode::NOT_FOUND => {
-                    Ok(VersionedEhrStatusVersionGetAtTimeOutcome::NotFound)
+                    Ok(VersionedEhrStatusVersionGetAtTimeOutcome::NotFound {
+                        body: answer.error_body(),
+                    })
                 }
                 _ => Err(answer.into_undocumented()),
             }
@@ -2600,7 +2892,9 @@ pub mod client {
                     },
                 }),
                 http::StatusCode::NOT_FOUND => {
-                    Ok(VersionedEhrStatusVersionGetByIdOutcome::NotFound)
+                    Ok(VersionedEhrStatusVersionGetByIdOutcome::NotFound {
+                        body: answer.error_body(),
+                    })
                 }
                 _ => Err(answer.into_undocumented()),
             }
@@ -2643,6 +2937,17 @@ pub mod client {
                     request.header("openehr-version-item-tag", &item.to_string())?;
                 }
             }
+            if let Some(value) = params.openehr_version.as_ref() {
+                request.header("openehr-version", &value.to_string())?;
+            }
+            if let Some(value) = params.openehr_audit_details.as_ref() {
+                for item in value {
+                    request.header("openehr-audit-details", &item.to_string())?;
+                }
+            }
+            if let Some(value) = params.openehr_template_id.as_ref() {
+                request.header("openehr-template-id", &value.to_string())?;
+            }
             request.json_body(body, params.content_type.as_deref())?;
             let answer = self.client.execute(request).await?;
             match answer.status() {
@@ -2666,11 +2971,15 @@ pub mod client {
                     },
                 }),
                 http::StatusCode::BAD_REQUEST => Ok(CompositionCreateOutcome::BadRequest {
-                    body: answer.optional_json()?,
+                    body: answer.error_body(),
                 }),
-                http::StatusCode::NOT_FOUND => Ok(CompositionCreateOutcome::NotFound),
+                http::StatusCode::NOT_FOUND => Ok(CompositionCreateOutcome::NotFound {
+                    body: answer.error_body(),
+                }),
                 http::StatusCode::UNPROCESSABLE_ENTITY => {
-                    Ok(CompositionCreateOutcome::UnprocessableEntity)
+                    Ok(CompositionCreateOutcome::UnprocessableEntity {
+                        body: answer.error_body(),
+                    })
                 }
                 _ => Err(answer.into_undocumented()),
             }
@@ -2713,7 +3022,9 @@ pub mod client {
                     },
                 }),
                 http::StatusCode::NO_CONTENT => Ok(CompositionGetOutcome::NoContent),
-                http::StatusCode::NOT_FOUND => Ok(CompositionGetOutcome::NotFound),
+                http::StatusCode::NOT_FOUND => Ok(CompositionGetOutcome::NotFound {
+                    body: answer.error_body(),
+                }),
                 _ => Err(answer.into_undocumented()),
             }
         }
@@ -2760,6 +3071,17 @@ pub mod client {
                     request.header("openehr-version-item-tag", &item.to_string())?;
                 }
             }
+            if let Some(value) = params.openehr_version.as_ref() {
+                request.header("openehr-version", &value.to_string())?;
+            }
+            if let Some(value) = params.openehr_audit_details.as_ref() {
+                for item in value {
+                    request.header("openehr-audit-details", &item.to_string())?;
+                }
+            }
+            if let Some(value) = params.openehr_template_id.as_ref() {
+                request.header("openehr-template-id", &value.to_string())?;
+            }
             request.json_body(body, params.content_type.as_deref())?;
             let answer = self.client.execute(request).await?;
             match answer.status() {
@@ -2782,11 +3104,14 @@ pub mod client {
                     },
                 }),
                 http::StatusCode::BAD_REQUEST => Ok(CompositionUpdateOutcome::BadRequest {
-                    body: answer.optional_json()?,
+                    body: answer.error_body(),
                 }),
-                http::StatusCode::NOT_FOUND => Ok(CompositionUpdateOutcome::NotFound),
+                http::StatusCode::NOT_FOUND => Ok(CompositionUpdateOutcome::NotFound {
+                    body: answer.error_body(),
+                }),
                 http::StatusCode::PRECONDITION_FAILED => {
                     Ok(CompositionUpdateOutcome::PreconditionFailed {
+                        body: answer.error_body(),
                         headers: CompositionUpdatePreconditionFailedHeaders {
                             etag: answer.header("ETag"),
                             location: answer.header("Location"),
@@ -2794,7 +3119,9 @@ pub mod client {
                     })
                 }
                 http::StatusCode::UNPROCESSABLE_ENTITY => {
-                    Ok(CompositionUpdateOutcome::UnprocessableEntity)
+                    Ok(CompositionUpdateOutcome::UnprocessableEntity {
+                        body: answer.error_body(),
+                    })
                 }
                 _ => Err(answer.into_undocumented()),
             }
@@ -2810,7 +3137,7 @@ pub mod client {
             &self,
             params: &CompositionDeleteParams,
         ) -> Result<CompositionDeleteOutcome, crate::rest::client::ClientError> {
-            let request = crate::rest::client::Request::new(
+            let mut request = crate::rest::client::Request::new(
                 http::Method::DELETE,
                 format!(
                     "/ehr/{}/composition/{}",
@@ -2818,6 +3145,14 @@ pub mod client {
                     crate::rest::client::path_segment(&params.uid_based_id)
                 ),
             );
+            if let Some(value) = params.openehr_version.as_ref() {
+                request.header("openehr-version", &value.to_string())?;
+            }
+            if let Some(value) = params.openehr_audit_details.as_ref() {
+                for item in value {
+                    request.header("openehr-audit-details", &item.to_string())?;
+                }
+            }
             let answer = self.client.execute(request).await?;
             match answer.status() {
                 http::StatusCode::NO_CONTENT => Ok(CompositionDeleteOutcome::NoContent {
@@ -2826,9 +3161,14 @@ pub mod client {
                         location: answer.header("Location"),
                     },
                 }),
-                http::StatusCode::BAD_REQUEST => Ok(CompositionDeleteOutcome::BadRequest),
-                http::StatusCode::NOT_FOUND => Ok(CompositionDeleteOutcome::NotFound),
+                http::StatusCode::BAD_REQUEST => Ok(CompositionDeleteOutcome::BadRequest {
+                    body: answer.error_body(),
+                }),
+                http::StatusCode::NOT_FOUND => Ok(CompositionDeleteOutcome::NotFound {
+                    body: answer.error_body(),
+                }),
                 http::StatusCode::CONFLICT => Ok(CompositionDeleteOutcome::Conflict {
+                    body: answer.error_body(),
                     headers: CompositionDeleteConflictHeaders {
                         etag: answer.header("ETag"),
                         location: answer.header("Location"),
@@ -2870,7 +3210,9 @@ pub mod client {
                         content_type: answer.header("Content-Type"),
                     },
                 }),
-                http::StatusCode::NOT_FOUND => Ok(VersionedCompositionGetOutcome::NotFound),
+                http::StatusCode::NOT_FOUND => Ok(VersionedCompositionGetOutcome::NotFound {
+                    body: answer.error_body(),
+                }),
                 _ => Err(answer.into_undocumented()),
             }
         }
@@ -2909,7 +3251,9 @@ pub mod client {
                     },
                 }),
                 http::StatusCode::NOT_FOUND => {
-                    Ok(VersionedCompositionRevisionHistoryOutcome::NotFound)
+                    Ok(VersionedCompositionRevisionHistoryOutcome::NotFound {
+                        body: answer.error_body(),
+                    })
                 }
                 _ => Err(answer.into_undocumented()),
             }
@@ -2954,7 +3298,9 @@ pub mod client {
                     },
                 }),
                 http::StatusCode::NOT_FOUND => {
-                    Ok(VersionedCompositionVersionGetAtTimeOutcome::NotFound)
+                    Ok(VersionedCompositionVersionGetAtTimeOutcome::NotFound {
+                        body: answer.error_body(),
+                    })
                 }
                 _ => Err(answer.into_undocumented()),
             }
@@ -2995,7 +3341,9 @@ pub mod client {
                     },
                 }),
                 http::StatusCode::NOT_FOUND => {
-                    Ok(VersionedCompositionVersionGetByIdOutcome::NotFound)
+                    Ok(VersionedCompositionVersionGetByIdOutcome::NotFound {
+                        body: answer.error_body(),
+                    })
                 }
                 _ => Err(answer.into_undocumented()),
             }
@@ -3036,7 +3384,9 @@ pub mod client {
                     },
                 }),
                 http::StatusCode::NO_CONTENT => Ok(DirectoryGetAtTimeOutcome::NoContent),
-                http::StatusCode::NOT_FOUND => Ok(DirectoryGetAtTimeOutcome::NotFound),
+                http::StatusCode::NOT_FOUND => Ok(DirectoryGetAtTimeOutcome::NotFound {
+                    body: answer.error_body(),
+                }),
                 _ => Err(answer.into_undocumented()),
             }
         }
@@ -3072,6 +3422,14 @@ pub mod client {
             if let Some(value) = params.content_type.as_ref() {
                 request.header("Content-Type", &value.to_string())?;
             }
+            if let Some(value) = params.openehr_version.as_ref() {
+                request.header("openehr-version", &value.to_string())?;
+            }
+            if let Some(value) = params.openehr_audit_details.as_ref() {
+                for item in value {
+                    request.header("openehr-audit-details", &item.to_string())?;
+                }
+            }
             request.json_body(body, params.content_type.as_deref())?;
             let answer = self.client.execute(request).await?;
             match answer.status() {
@@ -3092,11 +3450,14 @@ pub mod client {
                     },
                 }),
                 http::StatusCode::BAD_REQUEST => Ok(DirectoryUpdateOutcome::BadRequest {
-                    body: answer.optional_json()?,
+                    body: answer.error_body(),
                 }),
-                http::StatusCode::NOT_FOUND => Ok(DirectoryUpdateOutcome::NotFound),
+                http::StatusCode::NOT_FOUND => Ok(DirectoryUpdateOutcome::NotFound {
+                    body: answer.error_body(),
+                }),
                 http::StatusCode::PRECONDITION_FAILED => {
                     Ok(DirectoryUpdateOutcome::PreconditionFailed {
+                        body: answer.error_body(),
                         headers: DirectoryUpdatePreconditionFailedHeaders {
                             etag: answer.header("ETag"),
                             location: answer.header("Location"),
@@ -3134,6 +3495,14 @@ pub mod client {
             if let Some(value) = params.content_type.as_ref() {
                 request.header("Content-Type", &value.to_string())?;
             }
+            if let Some(value) = params.openehr_version.as_ref() {
+                request.header("openehr-version", &value.to_string())?;
+            }
+            if let Some(value) = params.openehr_audit_details.as_ref() {
+                for item in value {
+                    request.header("openehr-audit-details", &item.to_string())?;
+                }
+            }
             request.json_body(body, params.content_type.as_deref())?;
             let answer = self.client.execute(request).await?;
             match answer.status() {
@@ -3153,9 +3522,11 @@ pub mod client {
                     },
                 }),
                 http::StatusCode::BAD_REQUEST => Ok(DirectoryCreateOutcome::BadRequest {
-                    body: answer.optional_json()?,
+                    body: answer.error_body(),
                 }),
-                http::StatusCode::NOT_FOUND => Ok(DirectoryCreateOutcome::NotFound),
+                http::StatusCode::NOT_FOUND => Ok(DirectoryCreateOutcome::NotFound {
+                    body: answer.error_body(),
+                }),
                 _ => Err(answer.into_undocumented()),
             }
         }
@@ -3181,15 +3552,26 @@ pub mod client {
                 let value = &params.if_match;
                 request.header("If-Match", &value.to_string())?;
             }
+            if let Some(value) = params.openehr_version.as_ref() {
+                request.header("openehr-version", &value.to_string())?;
+            }
+            if let Some(value) = params.openehr_audit_details.as_ref() {
+                for item in value {
+                    request.header("openehr-audit-details", &item.to_string())?;
+                }
+            }
             let answer = self.client.execute(request).await?;
             match answer.status() {
                 http::StatusCode::NO_CONTENT => Ok(DirectoryDeleteOutcome::NoContent),
                 http::StatusCode::BAD_REQUEST => Ok(DirectoryDeleteOutcome::BadRequest {
-                    body: answer.optional_json()?,
+                    body: answer.error_body(),
                 }),
-                http::StatusCode::NOT_FOUND => Ok(DirectoryDeleteOutcome::NotFound),
+                http::StatusCode::NOT_FOUND => Ok(DirectoryDeleteOutcome::NotFound {
+                    body: answer.error_body(),
+                }),
                 http::StatusCode::PRECONDITION_FAILED => {
                     Ok(DirectoryDeleteOutcome::PreconditionFailed {
+                        body: answer.error_body(),
                         headers: DirectoryDeletePreconditionFailedHeaders {
                             etag: answer.header("ETag"),
                             location: answer.header("Location"),
@@ -3232,7 +3614,9 @@ pub mod client {
                         content_type: answer.header("Content-Type"),
                     },
                 }),
-                http::StatusCode::NOT_FOUND => Ok(DirectoryGetByVersionIdOutcome::NotFound),
+                http::StatusCode::NOT_FOUND => Ok(DirectoryGetByVersionIdOutcome::NotFound {
+                    body: answer.error_body(),
+                }),
                 _ => Err(answer.into_undocumented()),
             }
         }
@@ -3264,6 +3648,9 @@ pub mod client {
             if let Some(value) = params.content_type.as_ref() {
                 request.header("Content-Type", &value.to_string())?;
             }
+            if let Some(value) = params.openehr_template_id.as_ref() {
+                request.header("openehr-template-id", &value.to_string())?;
+            }
             request.json_body(body, params.content_type.as_deref())?;
             let answer = self.client.execute(request).await?;
             match answer.status() {
@@ -3283,10 +3670,14 @@ pub mod client {
                     },
                 }),
                 http::StatusCode::BAD_REQUEST => Ok(ContributionCreateOutcome::BadRequest {
-                    body: answer.optional_json()?,
+                    body: answer.error_body(),
                 }),
-                http::StatusCode::NOT_FOUND => Ok(ContributionCreateOutcome::NotFound),
-                http::StatusCode::CONFLICT => Ok(ContributionCreateOutcome::Conflict),
+                http::StatusCode::NOT_FOUND => Ok(ContributionCreateOutcome::NotFound {
+                    body: answer.error_body(),
+                }),
+                http::StatusCode::CONFLICT => Ok(ContributionCreateOutcome::Conflict {
+                    body: answer.error_body(),
+                }),
                 _ => Err(answer.into_undocumented()),
             }
         }
@@ -3320,7 +3711,9 @@ pub mod client {
                         content_type: answer.header("Content-Type"),
                     },
                 }),
-                http::StatusCode::NOT_FOUND => Ok(ContributionGetOutcome::NotFound),
+                http::StatusCode::NOT_FOUND => Ok(ContributionGetOutcome::NotFound {
+                    body: answer.error_body(),
+                }),
                 _ => Err(answer.into_undocumented()),
             }
         }
@@ -3363,9 +3756,11 @@ pub mod client {
                     },
                 }),
                 http::StatusCode::BAD_REQUEST => Ok(EhrTagsGetOutcome::BadRequest {
-                    body: answer.optional_json()?,
+                    body: answer.error_body(),
                 }),
-                http::StatusCode::NOT_FOUND => Ok(EhrTagsGetOutcome::NotFound),
+                http::StatusCode::NOT_FOUND => Ok(EhrTagsGetOutcome::NotFound {
+                    body: answer.error_body(),
+                }),
                 _ => Err(answer.into_undocumented()),
             }
         }
@@ -3399,7 +3794,9 @@ pub mod client {
                         content_type: answer.header("Content-Type"),
                     },
                 }),
-                http::StatusCode::NOT_FOUND => Ok(CompositionTagsGetOutcome::NotFound),
+                http::StatusCode::NOT_FOUND => Ok(CompositionTagsGetOutcome::NotFound {
+                    body: answer.error_body(),
+                }),
                 _ => Err(answer.into_undocumented()),
             }
         }
@@ -3443,9 +3840,11 @@ pub mod client {
                 }),
                 http::StatusCode::NO_CONTENT => Ok(CompositionTagsUpdateOutcome::NoContent),
                 http::StatusCode::BAD_REQUEST => Ok(CompositionTagsUpdateOutcome::BadRequest {
-                    body: answer.optional_json()?,
+                    body: answer.error_body(),
                 }),
-                http::StatusCode::NOT_FOUND => Ok(CompositionTagsUpdateOutcome::NotFound),
+                http::StatusCode::NOT_FOUND => Ok(CompositionTagsUpdateOutcome::NotFound {
+                    body: answer.error_body(),
+                }),
                 _ => Err(answer.into_undocumented()),
             }
         }
@@ -3472,7 +3871,9 @@ pub mod client {
             let answer = self.client.execute(request).await?;
             match answer.status() {
                 http::StatusCode::NO_CONTENT => Ok(CompositionTagsDeleteOutcome::NoContent),
-                http::StatusCode::NOT_FOUND => Ok(CompositionTagsDeleteOutcome::NotFound),
+                http::StatusCode::NOT_FOUND => Ok(CompositionTagsDeleteOutcome::NotFound {
+                    body: answer.error_body(),
+                }),
                 _ => Err(answer.into_undocumented()),
             }
         }
@@ -3506,7 +3907,9 @@ pub mod client {
                         content_type: answer.header("Content-Type"),
                     },
                 }),
-                http::StatusCode::NOT_FOUND => Ok(EhrStatusTagsGetOutcome::NotFound),
+                http::StatusCode::NOT_FOUND => Ok(EhrStatusTagsGetOutcome::NotFound {
+                    body: answer.error_body(),
+                }),
                 _ => Err(answer.into_undocumented()),
             }
         }
@@ -3550,9 +3953,11 @@ pub mod client {
                 }),
                 http::StatusCode::NO_CONTENT => Ok(EhrStatusTagsUpdateOutcome::NoContent),
                 http::StatusCode::BAD_REQUEST => Ok(EhrStatusTagsUpdateOutcome::BadRequest {
-                    body: answer.optional_json()?,
+                    body: answer.error_body(),
                 }),
-                http::StatusCode::NOT_FOUND => Ok(EhrStatusTagsUpdateOutcome::NotFound),
+                http::StatusCode::NOT_FOUND => Ok(EhrStatusTagsUpdateOutcome::NotFound {
+                    body: answer.error_body(),
+                }),
                 _ => Err(answer.into_undocumented()),
             }
         }
@@ -3579,7 +3984,9 @@ pub mod client {
             let answer = self.client.execute(request).await?;
             match answer.status() {
                 http::StatusCode::NO_CONTENT => Ok(EhrStatusTagsDeleteOutcome::NoContent),
-                http::StatusCode::NOT_FOUND => Ok(EhrStatusTagsDeleteOutcome::NotFound),
+                http::StatusCode::NOT_FOUND => Ok(EhrStatusTagsDeleteOutcome::NotFound {
+                    body: answer.error_body(),
+                }),
                 _ => Err(answer.into_undocumented()),
             }
         }

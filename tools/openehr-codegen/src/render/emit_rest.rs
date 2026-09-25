@@ -22,8 +22,10 @@
     reason = "dev tooling over JSON artifacts (vendored BMM/OAS bundles, emitter reports) — not the \
               application (#1694)"
 )]
-use crate::load::oas::{Oas, Operation, Response};
-use crate::plan::overrides::oas_monomorphization;
+use crate::load::oas::{Oas, Operation, Param, Response};
+use crate::plan::overrides::{
+    oas_monomorphization, rest_default_member, rest_docs_text_header, rest_docs_text_headers,
+};
 use crate::render::naming;
 use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet};
@@ -412,7 +414,10 @@ pub(crate) fn emit_group(
     }
 
     // ── per-operation param structs ──
-    let ops = oas.operations();
+    let mut ops = oas.operations();
+    for op in &mut ops {
+        append_docs_text_headers(op);
+    }
     for op in &ops {
         emit_params_struct(&mut b, op, &ctx);
     }
@@ -848,11 +853,20 @@ fn emit_struct_field(b: &mut String, f: StructField<'_>, ctx: &Ctx) {
         let _ = writeln!(b, "    /// OPTIONAL by the docs text — {}", ov.citation);
         let _ = writeln!(b, "    /// ({})", ov.reason);
     }
+    // A default-when-absent member keeps its type and carries its citation.
+    let default_member = rest_default_member(f.ty_name, f.pname);
+    if let Some(dm) = default_member {
+        let _ = writeln!(b, "    /// DEFAULT when absent — {}", dm.citation);
+        let _ = writeln!(b, "    /// ({})", dm.reason);
+    }
     if let Some(rename) = naming::serde_rename(f.pname, &ident) {
         let _ = writeln!(b, "    #[serde(rename = \"{rename}\")]");
     }
     if !f.is_required {
         b.push_str(SKIP_NONE_ATTR);
+    }
+    if default_member.is_some() {
+        b.push_str("    #[serde(default)]\n");
     }
     let _ = writeln!(b, "    pub {ident}: {ty},");
 }
@@ -1026,9 +1040,37 @@ fn emit_params_struct(b: &mut String, op: &Operation, ctx: &Ctx) {
             b.push_str(SKIP_NONE_ATTR);
         }
         let _ = writeln!(b, "    /// `{}` ({})", p.name, p.location);
+        // A docs-text header carries its citation into the generated code (the
+        // OAS declares no parameter for it; the ITS-REST docs text defines it).
+        if let Some(h) = rest_docs_text_header(&op.operation_id, &p.name) {
+            let _ = writeln!(b, "    /// DEFINED by the docs text — {}", h.citation);
+            let _ = writeln!(b, "    /// ({})", h.reason);
+        }
         let _ = writeln!(b, "    pub {ident}: {ty},");
     }
     b.push_str("}\n\n");
+}
+
+/// Appends to `op` the request headers the ITS-REST docs text defines for it
+/// beyond the OAS parameters (`plan::overrides::REST_DOCS_TEXT_HEADERS`), each
+/// as an optional header parameter after the declared ones.
+fn append_docs_text_headers(op: &mut Operation<'_>) {
+    for h in rest_docs_text_headers(&op.operation_id) {
+        if op.parameters.iter().any(|p| p.name == h.name) {
+            continue;
+        }
+        let schema = if h.list {
+            serde_json::json!({ "type": "array", "items": { "type": "string" } })
+        } else {
+            serde_json::json!({ "type": "string" })
+        };
+        op.parameters.push(Param {
+            name: h.name.to_string(),
+            location: "header".to_string(),
+            required: false,
+            schema,
+        });
+    }
 }
 
 fn emit_trait_method(b: &mut String, op: &Operation, ctx: &Ctx) {
@@ -1195,6 +1237,9 @@ const LIST_HEADERS: &[&str] = &["openehr-item-tag", "openehr-version-item-tag"];
 enum ClientBody {
     /// No content declared: the variant carries no body.
     None,
+    /// A `4xx` answer: the error body as received, decoded as the ITS-REST
+    /// `Error` when it is one (`crate::rest::client::ErrorBody`).
+    Error,
     /// Exactly one media type, `application/json`: decoded into the mapped
     /// Rust type; `optional` when the OAS lets the body be empty.
     Json { ty: String, optional: bool },
@@ -1209,16 +1254,20 @@ enum ClientBody {
 /// A `2xx` JSON body is present by the OAS unless the operation takes a
 /// `Prefer` parameter and answers `201` (ITS-REST: "If the `Prefer` header is
 /// missing or set to `return=minimal`, the body is empty" — every `201_*`
-/// response component), so that one is `Option`. An error response's JSON body
-/// is always optional: "The response body MAY contain error details" (the
-/// `400` response component).
+/// response component), so that one is `Option`. Every `4xx` answer carries
+/// the error body as received, whether or not the OAS attaches a schema to
+/// that status: "The response body MAY contain error details" (the `400`
+/// response component), and the only schema the OAS ever attaches to a `4xx`
+/// is `Error`.
 fn client_body(op: &Operation, resp: &Response, ctx: &Ctx) -> ClientBody {
+    if resp.status.is_client_error() {
+        return ClientBody::Error;
+    }
     match resp.media.as_slice() {
         [] => ClientBody::None,
         [(mt, schema)] if mt == "application/json" => {
             let has_prefer = op.parameters.iter().any(|p| p.name == "Prefer");
-            let optional = resp.status.is_client_error()
-                || (resp.status == http::StatusCode::CREATED && has_prefer);
+            let optional = resp.status == http::StatusCode::CREATED && has_prefer;
             ClientBody::Json {
                 ty: ctx.rust_type(schema),
                 optional,
@@ -1291,6 +1340,11 @@ fn emit_outcome(b: &mut String, op: &Operation, ctx: &Ctx) {
         let mut fields: Vec<(String, String)> = Vec::new();
         match client_body(op, resp, ctx) {
             ClientBody::None => {}
+            ClientBody::Error => fields.push((
+                "The error body as received, decoded as the ITS-REST `Error` when it is one."
+                    .to_string(),
+                "body: crate::rest::client::ErrorBody".to_string(),
+            )),
             ClientBody::Json { ty, optional } => {
                 fields.push(if optional {
                     (
@@ -1451,6 +1505,7 @@ fn emit_client_method(b: &mut String, op: &Operation, ctx: &Ctx) {
         let mut fields: Vec<String> = Vec::new();
         match client_body(op, resp, ctx) {
             ClientBody::None => {}
+            ClientBody::Error => fields.push("body: answer.error_body()".to_string()),
             ClientBody::Json { optional, .. } => fields.push(if optional {
                 "body: answer.optional_json()?".to_string()
             } else {

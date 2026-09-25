@@ -21,7 +21,7 @@ surface is API nobody can use.
 | `src/xml/generated/` (`ToXml`/`FromXml`) | **GENERATED** (`emit-xml`, from the XSDs + BMM) | edit the emitter, regenerate |
 | `src/json_codec/generated/structural.rs` (the `_type` → decode dispatch + the declared-key table) | **GENERATED** (`emit-json`, from BMM) | edit the emitter, regenerate |
 | `src/rest/generated/` (ITS-REST DTOs, server traits, clients, routes) | **GENERATED** (`emit-rest`, from the vendored OAS) | edit the emitter, regenerate |
-| `xml/runtime.rs`, `rest/runtime.rs`, `rest/client.rs` (the client runtime: `Transport`, `ReqwestTransport`, `Client`, `Credentials`, `RetryPolicy`, `ClientError`), `json` + `wire_validate` entry points, validation, fidelity gates | hand-written | edit normally, with spec citations |
+| `xml/runtime.rs`, `rest/runtime.rs`, `rest/client.rs` (the client runtime: `Transport`, `ReqwestTransport`, `Client`, `Credentials` over `secrecy::SecretString`, `RetryPolicy`, `ErrorBody`, `ClientError`), `json` + `wire_validate` entry points, validation, fidelity gates | hand-written | edit normally, with spec citations |
 
 **Features (`default = ["full"]` = everything, so consumers are unaffected).**
 The graph underneath is layered: `json` → `xml` → `opt14` are the openEHR
@@ -29,7 +29,12 @@ content surfaces and are all wasm-safe; `schema-validation` (`jsonschema` + the
 embedded RM schema) and the three REST features sit outside that chain:
 `rest` (DTOs, params, routes, `ApiError` over serde + `http`), `rest-server`
 (`rest` + the server traits + `axum`) and `rest-client` (`rest` + the
-generated clients + the `rest/client.rs` runtime over `reqwest`). A CI lane
+generated clients + the `rest/client.rs` runtime over `reqwest`, with
+`secrecy` for the credential secret). The generated contract carries, beyond
+the OAS parameters, the request headers the ITS-REST docs text defines
+(`openehr-version`, `openehr-audit-details`, `openehr-template-id` on the
+commit operations — `plan::overrides::REST_DOCS_TEXT_HEADERS`), and every
+`4xx` outcome variant carries an `ErrorBody`. A CI lane
 clippies each REST feature alone and reads back from `cargo tree` that `rest`
 pulls neither `axum` nor `reqwest` and `rest-client` pulls no `axum`. A
 browser consumer takes `default-features = false, features = ["opt14"]`, and

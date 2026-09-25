@@ -17,6 +17,23 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **The `openehr-its` ITS-REST client carries what a consumer meets on first
+  adoption** (#3487). The commit operations (COMPOSITION, EHR_STATUS, the
+  directory, EHR creation, the demographic parties and relationships) take
+  the committal-metadata headers the ITS-REST overview defines and the
+  OpenAPI declares no parameter for: `openehr-version`,
+  `openehr-audit-details` (one field line per value) and, on the COMPOSITION
+  and CONTRIBUTION commits, `openehr-template-id`. Every documented `4xx`
+  outcome carries the answer body as an `ErrorBody`: the bytes as received,
+  decoded as the ITS-REST `Error` when they are one, so a `422`'s
+  `validationErrors` reach the caller; `ClientError::Unauthorized`,
+  `Forbidden`, `ServiceFailure` and `UndocumentedStatus` carry the same body.
+  A `400` whose body carries `message` alone decodes as the `Error` with an
+  empty `validationErrors`. A path parameter keeps `:` literal, so a version
+  uid is sent as the specification writes it. `Credentials` hold their secret
+  in a `secrecy::SecretString` (redacted `Debug`, zeroed on drop), with
+  `Credentials::basic` and `Credentials::bearer` constructors. The nine
+  `openehr-*` crates step to 0.0.72.
 - **`openehr-its` ships an ITS-REST client** (#3485). The new `rest-client`
   feature adds a generated client per ITS-REST 1.1.0 API group
   (`rest::generated::<group>::client`) over a hand-written runtime
