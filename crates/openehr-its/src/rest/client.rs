@@ -17,8 +17,11 @@
 
 use http::header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE, WWW_AUTHENTICATE};
 use http::{HeaderMap, HeaderName, HeaderValue, Method, StatusCode};
+use secrecy::{ExposeSecret as _, SecretString};
 use std::fmt;
 use std::time::Duration;
+
+use super::generated::common::Error;
 
 /// The canonical JSON media type, the default `Accept` and `Content-Type`.
 const CANONICAL_JSON: &str = "application/json";
@@ -127,7 +130,8 @@ impl Transport for ReqwestTransport {
 /// `Authorization` … headers in their requests when required",
 /// `ITS-REST/specifications/docs/overview/Requests_and_responses.md`
 /// §Authentication and authorization); Basic and Bearer cover the shipped
-/// servers. `Debug` never prints the secret.
+/// servers. The secret is a [`SecretString`]: `Debug` never prints it and the
+/// memory is zeroed on drop.
 #[derive(Clone)]
 pub enum Credentials {
     /// HTTP Basic (RFC 7617).
@@ -135,10 +139,10 @@ pub enum Credentials {
         /// The user name.
         user: String,
         /// The password.
-        password: String,
+        password: SecretString,
     },
     /// A bearer token (RFC 6750), sent verbatim after `Bearer `.
-    Bearer(String),
+    Bearer(SecretString),
 }
 
 impl fmt::Debug for Credentials {
@@ -155,15 +159,31 @@ impl fmt::Debug for Credentials {
 }
 
 impl Credentials {
+    /// HTTP Basic credentials for `user`.
+    #[must_use]
+    pub fn basic(user: impl Into<String>, password: impl Into<SecretString>) -> Self {
+        Self::Basic {
+            user: user.into(),
+            password: password.into(),
+        }
+    }
+
+    /// A bearer token.
+    #[must_use]
+    pub fn bearer(token: impl Into<SecretString>) -> Self {
+        Self::Bearer(token.into())
+    }
+
     /// The `Authorization` field value.
     fn header_value(&self) -> Result<HeaderValue, ClientError> {
         use base64::Engine as _;
         let text = match self {
             Self::Basic { user, password } => format!(
                 "Basic {}",
-                base64::engine::general_purpose::STANDARD.encode(format!("{user}:{password}"))
+                base64::engine::general_purpose::STANDARD
+                    .encode(format!("{user}:{}", password.expose_secret()))
             ),
-            Self::Bearer(token) => format!("Bearer {token}"),
+            Self::Bearer(token) => format!("Bearer {}", token.expose_secret()),
         };
         let mut value =
             HeaderValue::from_str(&text).map_err(|source| ClientError::HeaderValue {
@@ -321,14 +341,14 @@ impl<T: Transport> Client<T> {
                 method: answer.method,
                 path: answer.path,
                 challenge: header_text(&answer.headers, WWW_AUTHENTICATE.as_str()),
-                detail: error_message(&answer.body),
+                body: ErrorBody::from_bytes(answer.body),
             });
         }
         if answer.status == StatusCode::FORBIDDEN {
             return Err(ClientError::Forbidden {
                 method: answer.method,
                 path: answer.path,
-                detail: error_message(&answer.body),
+                body: ErrorBody::from_bytes(answer.body),
             });
         }
         if answer.status.is_server_error() {
@@ -336,7 +356,7 @@ impl<T: Transport> Client<T> {
                 method: answer.method,
                 path: answer.path,
                 status: answer.status,
-                detail: error_message(&answer.body),
+                body: ErrorBody::from_bytes(answer.body),
             });
         }
         Ok(answer)
@@ -388,21 +408,95 @@ fn header_text(headers: &HeaderMap, name: &str) -> Option<String> {
         .map(str::to_owned)
 }
 
-/// The `message` of an ITS-REST `Error` body, when `body` is one.
-fn error_message(body: &[u8]) -> Option<String> {
-    // NOTE: ITS-REST (`400` response component) says "The response body MAY
-    // contain error details", so a body that is not an `Error` is
-    // legitimately absent detail, not a defect.
-    serde_json::from_slice::<super::generated::common::Error>(body)
-        .ok()
-        .map(|error| error.message)
+/// The body of an error answer: the bytes as received, and the ITS-REST
+/// `Error` they decode to when they are one.
+///
+/// ITS-REST attaches the `Error` schema to a `400` and says the body "MAY
+/// contain error details" (the `400` response component); every other error
+/// status describes no body. A service may still send one in any shape, so
+/// the raw bytes are kept beside the decoded form and nothing the service
+/// said is lost.
+#[derive(Clone)]
+pub struct ErrorBody {
+    raw: Vec<u8>,
+    // Boxed: the decoded form rides inside every `ClientError` variant.
+    error: Option<Box<Error>>,
+}
+
+impl ErrorBody {
+    /// The error body read from `raw`.
+    #[must_use]
+    pub fn from_bytes(raw: Vec<u8>) -> Self {
+        // NOTE: ITS-REST (`400` response component) says "The response body
+        // MAY contain error details", so a body that is not an `Error` is
+        // legitimately absent detail, not a defect; the bytes stay in `raw`.
+        let error = serde_json::from_slice::<Error>(&raw).ok().map(Box::new);
+        Self { raw, error }
+    }
+
+    /// The bytes as received.
+    #[must_use]
+    pub fn raw(&self) -> &[u8] {
+        &self.raw
+    }
+
+    /// The body as text, when it is UTF-8.
+    #[must_use]
+    pub fn text(&self) -> Option<&str> {
+        // NOTE: no openEHR spec constrains the bytes of an error body; one
+        // that is not UTF-8 is legitimately not text, not a defect.
+        std::str::from_utf8(&self.raw).ok()
+    }
+
+    /// The decoded ITS-REST `Error`, when the body is one.
+    #[must_use]
+    pub fn error(&self) -> Option<&Error> {
+        self.error.as_deref()
+    }
+
+    /// The `message` of the ITS-REST `Error`, when the body is one.
+    #[must_use]
+    pub fn message(&self) -> Option<&str> {
+        self.error.as_ref().map(|e| e.message.as_str())
+    }
+
+    /// The `validationErrors` of the ITS-REST `Error`; empty when the body is
+    /// not one or lists none.
+    #[must_use]
+    pub fn validation_errors(&self) -> &[String] {
+        self.error
+            .as_ref()
+            .map_or(&[], |e| e.validation_errors.as_slice())
+    }
+
+    /// Whether the service sent no body at all.
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.raw.is_empty()
+    }
+}
+
+impl fmt::Debug for ErrorBody {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ErrorBody")
+            .field("error", &self.error)
+            .field("raw", &String::from_utf8_lossy(&self.raw))
+            .finish()
+    }
 }
 
 /// A percent-encoded path segment, for substitution into an operation's path
 /// template.
+///
+/// Every character outside RFC 3986 §2.3 unreserved is encoded, except the
+/// two §3.3 `pchar` extras `:` and `@`, which stay literal — a version uid
+/// (`8849182c…::cdr.example.org::1`) is sent as the spec's own examples write
+/// it. `/` is encoded, so a value can never add a segment.
 #[must_use]
 pub fn path_segment(value: &impl fmt::Display) -> String {
-    urlencoding::encode(&value.to_string()).into_owned()
+    urlencoding::encode(&value.to_string())
+        .replace("%3A", ":")
+        .replace("%40", "@")
 }
 
 /// One request under the client's base URL, as the generated methods build
@@ -617,6 +711,13 @@ impl Answer {
         self.json().map(Some)
     }
 
+    /// The body as an error answer's body: the bytes as received, decoded as
+    /// the ITS-REST `Error` when they are one.
+    #[must_use]
+    pub fn error_body(&self) -> ErrorBody {
+        ErrorBody::from_bytes(self.body.clone())
+    }
+
     /// This answer as the error for a status the operation does not document.
     #[must_use]
     pub fn into_undocumented(self) -> ClientError {
@@ -624,7 +725,7 @@ impl Answer {
             method: self.method,
             path: self.path,
             status: self.status,
-            detail: error_message(&self.body),
+            body: ErrorBody::from_bytes(self.body),
         }
     }
 }
@@ -634,8 +735,9 @@ impl Answer {
 /// A status the operation documents is an outcome variant of that call,
 /// never an error; everything here is the other half. An error names the
 /// method and operation path, never the query (which can name a subject) and
-/// never a body (which can be clinical content): `detail` is the `message`
-/// of an ITS-REST `Error` body when the service sent one.
+/// never the request body (which can be clinical content); a status error
+/// carries the service's own answer body as an [`ErrorBody`], and the
+/// message text stays free of it.
 #[derive(Debug, thiserror::Error)]
 pub enum ClientError {
     /// The base URL cannot carry an operation path.
@@ -707,8 +809,8 @@ pub enum ClientError {
         path: String,
         /// The `WWW-Authenticate` challenge, when the service sent one.
         challenge: Option<String>,
-        /// The `message` of the `Error` body, when the service sent one.
-        detail: Option<String>,
+        /// The answer body as the service sent it.
+        body: ErrorBody,
     },
     /// The service refuses to authorize the request (`403`).
     #[error("the openEHR service refuses to authorize {method} {path}")]
@@ -717,8 +819,8 @@ pub enum ClientError {
         method: Method,
         /// The operation path.
         path: String,
-        /// The `message` of the `Error` body, when the service sent one.
-        detail: Option<String>,
+        /// The answer body as the service sent it.
+        body: ErrorBody,
     },
     /// The service answered `5xx`, on every attempt within the budget.
     #[error("the openEHR service answered {status} for {method} {path}")]
@@ -729,8 +831,8 @@ pub enum ClientError {
         path: String,
         /// The status of the last attempt.
         status: StatusCode,
-        /// The `message` of the `Error` body, when the service sent one.
-        detail: Option<String>,
+        /// The answer body as the service sent it.
+        body: ErrorBody,
     },
     /// The service answered a status outside the operation's documented set
     /// — including the general `406`, `415` and `501` the ITS-REST overview
@@ -745,8 +847,8 @@ pub enum ClientError {
         path: String,
         /// The status that was answered.
         status: StatusCode,
-        /// The `message` of the `Error` body, when the service sent one.
-        detail: Option<String>,
+        /// The answer body as the service sent it.
+        body: ErrorBody,
     },
     /// The body of a documented answer is not the shape the OAS declares.
     #[error("the {status} body of {method} {path} is not the documented shape")]
@@ -780,16 +882,33 @@ impl ClientError {
 
 #[cfg(test)]
 mod tests {
-    use super::{Credentials, Request, path_segment};
+    use super::{Credentials, ErrorBody, Request, path_segment};
     use http::Method;
 
     #[test]
-    fn a_path_segment_is_percent_encoded() {
+    fn a_path_segment_is_percent_encoded_with_the_pchar_extras_literal() {
         assert_eq!(path_segment(&"Vital Signs"), "Vital%20Signs");
-        assert_eq!(
-            path_segment(&"8849182c::system::1"),
-            "8849182c%3A%3Asystem%3A%3A1"
+        assert_eq!(path_segment(&"8849182c::system::1"), "8849182c::system::1");
+        assert_eq!(path_segment(&"a/b?c#d%3A"), "a%2Fb%3Fc%23d%253A");
+        assert_eq!(path_segment(&"user@host"), "user@host");
+    }
+
+    #[test]
+    fn an_error_body_decodes_the_its_rest_error_and_keeps_the_bytes() {
+        let full = ErrorBody::from_bytes(
+            br#"{"message":"unknown template","validationErrors":["/content: no template"]}"#
+                .to_vec(),
         );
+        assert_eq!(full.message(), Some("unknown template"));
+        assert_eq!(full.validation_errors(), ["/content: no template"]);
+        let prose = ErrorBody::from_bytes(br#"{"message":"malformed body"}"#.to_vec());
+        assert_eq!(prose.message(), Some("malformed body"));
+        assert!(prose.validation_errors().is_empty());
+        let other = ErrorBody::from_bytes(b"<html>gateway</html>".to_vec());
+        assert!(other.error().is_none());
+        assert_eq!(other.text(), Some("<html>gateway</html>"));
+        assert_eq!(other.raw(), b"<html>gateway</html>");
+        assert!(ErrorBody::from_bytes(Vec::new()).is_empty());
     }
 
     #[test]
@@ -814,12 +933,24 @@ mod tests {
 
     #[test]
     fn credentials_debug_redacts_the_secret() {
-        let basic = Credentials::Basic {
-            user: "alice".to_owned(),
-            password: "hunter2".to_owned(),
-        };
-        let bearer = Credentials::Bearer("eyJ.secret".to_owned());
+        let basic = Credentials::basic("alice", "hunter2");
+        let bearer = Credentials::bearer("eyJ.secret".to_owned());
         assert!(!format!("{basic:?}").contains("hunter2"));
         assert!(!format!("{bearer:?}").contains("secret"));
+        assert!(format!("{basic:?}").contains("alice"));
+    }
+
+    #[test]
+    #[expect(
+        clippy::panic_in_result_fn,
+        reason = "test assertions in the Book's Result-returning shape (.claude/rules/testing.md §Test shapes)"
+    )]
+    fn credentials_render_the_authorization_value() -> Result<(), Box<dyn std::error::Error>> {
+        let basic = Credentials::basic("alice", "hunter2").header_value()?;
+        assert_eq!(basic.to_str()?, "Basic YWxpY2U6aHVudGVyMg==");
+        assert!(basic.is_sensitive());
+        let bearer = Credentials::bearer("tok").header_value()?;
+        assert_eq!(bearer.to_str()?, "Bearer tok");
+        Ok(())
     }
 }

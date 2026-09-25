@@ -1122,11 +1122,14 @@ pub mod client {
         },
         /// The `400` answer.
         BadRequest {
-            /// The body, decoded from canonical JSON; `None` when the service sent none.
-            body: Option<super::super::common::Error>,
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
         },
         /// The `409` answer.
-        Conflict,
+        Conflict {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The response headers the OAS declares for the `200` answer of
@@ -1152,13 +1155,19 @@ pub mod client {
         },
         /// The `400` answer.
         BadRequest {
-            /// The body, decoded from canonical JSON; `None` when the service sent none.
-            body: Option<super::super::common::Error>,
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
         },
         /// The `404` answer.
-        NotFound,
+        NotFound {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
         /// The `406` answer.
-        NotAcceptable,
+        NotAcceptable {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The response headers the OAS declares for the `200` answer of
@@ -1182,13 +1191,19 @@ pub mod client {
         },
         /// The `400` answer.
         BadRequest {
-            /// The body, decoded from canonical JSON; `None` when the service sent none.
-            body: Option<super::super::common::Error>,
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
         },
         /// The `404` answer.
-        NotFound,
+        NotFound {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
         /// The `406` answer.
-        NotAcceptable,
+        NotAcceptable {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The response headers the OAS declares for the `200` answer of
@@ -1254,11 +1269,14 @@ pub mod client {
         },
         /// The `400` answer.
         BadRequest {
-            /// The body, decoded from canonical JSON; `None` when the service sent none.
-            body: Option<super::super::common::Error>,
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
         },
         /// The `409` answer.
-        Conflict,
+        Conflict {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The response headers the OAS declares for the `200` answer of
@@ -1282,11 +1300,14 @@ pub mod client {
         },
         /// The `400` answer.
         BadRequest {
-            /// The body, decoded from canonical JSON; `None` when the service sent none.
-            body: Option<super::super::common::Error>,
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
         },
         /// The `404` answer.
-        NotFound,
+        NotFound {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The response headers the OAS declares for the `200` answer of
@@ -1310,13 +1331,19 @@ pub mod client {
         },
         /// The `400` answer.
         BadRequest {
-            /// The body, decoded from canonical JSON; `None` when the service sent none.
-            body: Option<super::super::common::Error>,
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
         },
         /// The `404` answer.
-        NotFound,
+        NotFound {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
         /// The `406` answer.
-        NotAcceptable,
+        NotAcceptable {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The response headers the OAS declares for the `200` answer of
@@ -1340,11 +1367,14 @@ pub mod client {
         },
         /// The `400` answer.
         BadRequest {
-            /// The body, decoded from canonical JSON; `None` when the service sent none.
-            body: Option<super::super::common::Error>,
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
         },
         /// The `404` answer.
-        NotFound,
+        NotFound {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The response headers the OAS declares for the `200` answer of
@@ -1387,8 +1417,8 @@ pub mod client {
         },
         /// The `400` answer.
         BadRequest {
-            /// The body, decoded from canonical JSON; `None` when the service sent none.
-            body: Option<super::super::common::Error>,
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
         },
     }
 
@@ -1412,7 +1442,10 @@ pub mod client {
             headers: DefinitionQueryVersionGetOkHeaders,
         },
         /// The `404` answer.
-        NotFound,
+        NotFound {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The response headers the OAS declares for the `200` answer of
@@ -1434,11 +1467,14 @@ pub mod client {
         },
         /// The `400` answer.
         BadRequest {
-            /// The body, decoded from canonical JSON; `None` when the service sent none.
-            body: Option<super::super::common::Error>,
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
         },
         /// The `409` answer.
-        Conflict,
+        Conflict {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The `definition` API group over one configured CDR.
@@ -1548,10 +1584,12 @@ pub mod client {
                 }
                 http::StatusCode::BAD_REQUEST => {
                     Ok(DefinitionTemplateAdl14UploadOutcome::BadRequest {
-                        body: answer.optional_json()?,
+                        body: answer.error_body(),
                     })
                 }
-                http::StatusCode::CONFLICT => Ok(DefinitionTemplateAdl14UploadOutcome::Conflict),
+                http::StatusCode::CONFLICT => Ok(DefinitionTemplateAdl14UploadOutcome::Conflict {
+                    body: answer.error_body(),
+                }),
                 _ => Err(answer.into_undocumented()),
             }
         }
@@ -1587,12 +1625,16 @@ pub mod client {
                 }),
                 http::StatusCode::BAD_REQUEST => {
                     Ok(DefinitionTemplateAdl14GetOutcome::BadRequest {
-                        body: answer.optional_json()?,
+                        body: answer.error_body(),
                     })
                 }
-                http::StatusCode::NOT_FOUND => Ok(DefinitionTemplateAdl14GetOutcome::NotFound),
+                http::StatusCode::NOT_FOUND => Ok(DefinitionTemplateAdl14GetOutcome::NotFound {
+                    body: answer.error_body(),
+                }),
                 http::StatusCode::NOT_ACCEPTABLE => {
-                    Ok(DefinitionTemplateAdl14GetOutcome::NotAcceptable)
+                    Ok(DefinitionTemplateAdl14GetOutcome::NotAcceptable {
+                        body: answer.error_body(),
+                    })
                 }
                 _ => Err(answer.into_undocumented()),
             }
@@ -1635,14 +1677,18 @@ pub mod client {
                 }),
                 http::StatusCode::BAD_REQUEST => {
                     Ok(DefinitionTemplateAdl14ExampleGetOutcome::BadRequest {
-                        body: answer.optional_json()?,
+                        body: answer.error_body(),
                     })
                 }
                 http::StatusCode::NOT_FOUND => {
-                    Ok(DefinitionTemplateAdl14ExampleGetOutcome::NotFound)
+                    Ok(DefinitionTemplateAdl14ExampleGetOutcome::NotFound {
+                        body: answer.error_body(),
+                    })
                 }
                 http::StatusCode::NOT_ACCEPTABLE => {
-                    Ok(DefinitionTemplateAdl14ExampleGetOutcome::NotAcceptable)
+                    Ok(DefinitionTemplateAdl14ExampleGetOutcome::NotAcceptable {
+                        body: answer.error_body(),
+                    })
                 }
                 _ => Err(answer.into_undocumented()),
             }
@@ -1741,10 +1787,12 @@ pub mod client {
                 }
                 http::StatusCode::BAD_REQUEST => {
                     Ok(DefinitionTemplateAdl2UploadOutcome::BadRequest {
-                        body: answer.optional_json()?,
+                        body: answer.error_body(),
                     })
                 }
-                http::StatusCode::CONFLICT => Ok(DefinitionTemplateAdl2UploadOutcome::Conflict),
+                http::StatusCode::CONFLICT => Ok(DefinitionTemplateAdl2UploadOutcome::Conflict {
+                    body: answer.error_body(),
+                }),
                 _ => Err(answer.into_undocumented()),
             }
         }
@@ -1778,9 +1826,11 @@ pub mod client {
                     },
                 }),
                 http::StatusCode::BAD_REQUEST => Ok(DefinitionTemplateAdl2GetOutcome::BadRequest {
-                    body: answer.optional_json()?,
+                    body: answer.error_body(),
                 }),
-                http::StatusCode::NOT_FOUND => Ok(DefinitionTemplateAdl2GetOutcome::NotFound),
+                http::StatusCode::NOT_FOUND => Ok(DefinitionTemplateAdl2GetOutcome::NotFound {
+                    body: answer.error_body(),
+                }),
                 _ => Err(answer.into_undocumented()),
             }
         }
@@ -1822,14 +1872,18 @@ pub mod client {
                 }),
                 http::StatusCode::BAD_REQUEST => {
                     Ok(DefinitionTemplateAdl2ExampleGetOutcome::BadRequest {
-                        body: answer.optional_json()?,
+                        body: answer.error_body(),
                     })
                 }
                 http::StatusCode::NOT_FOUND => {
-                    Ok(DefinitionTemplateAdl2ExampleGetOutcome::NotFound)
+                    Ok(DefinitionTemplateAdl2ExampleGetOutcome::NotFound {
+                        body: answer.error_body(),
+                    })
                 }
                 http::StatusCode::NOT_ACCEPTABLE => {
-                    Ok(DefinitionTemplateAdl2ExampleGetOutcome::NotAcceptable)
+                    Ok(DefinitionTemplateAdl2ExampleGetOutcome::NotAcceptable {
+                        body: answer.error_body(),
+                    })
                 }
                 _ => Err(answer.into_undocumented()),
             }
@@ -1867,11 +1921,13 @@ pub mod client {
                 }),
                 http::StatusCode::BAD_REQUEST => {
                     Ok(DefinitionTemplateAdl2VersionGetOutcome::BadRequest {
-                        body: answer.optional_json()?,
+                        body: answer.error_body(),
                     })
                 }
                 http::StatusCode::NOT_FOUND => {
-                    Ok(DefinitionTemplateAdl2VersionGetOutcome::NotFound)
+                    Ok(DefinitionTemplateAdl2VersionGetOutcome::NotFound {
+                        body: answer.error_body(),
+                    })
                 }
                 _ => Err(answer.into_undocumented()),
             }
@@ -1945,7 +2001,7 @@ pub mod client {
                     },
                 }),
                 http::StatusCode::BAD_REQUEST => Ok(DefinitionQueryStoreYamlOutcome::BadRequest {
-                    body: answer.optional_json()?,
+                    body: answer.error_body(),
                 }),
                 _ => Err(answer.into_undocumented()),
             }
@@ -1980,7 +2036,9 @@ pub mod client {
                         content_type: answer.header("Content-Type"),
                     },
                 }),
-                http::StatusCode::NOT_FOUND => Ok(DefinitionQueryVersionGetOutcome::NotFound),
+                http::StatusCode::NOT_FOUND => Ok(DefinitionQueryVersionGetOutcome::NotFound {
+                    body: answer.error_body(),
+                }),
                 _ => Err(answer.into_undocumented()),
             }
         }
@@ -2021,10 +2079,14 @@ pub mod client {
                 }),
                 http::StatusCode::BAD_REQUEST => {
                     Ok(DefinitionQueryVersionStoreYamlOutcome::BadRequest {
-                        body: answer.optional_json()?,
+                        body: answer.error_body(),
                     })
                 }
-                http::StatusCode::CONFLICT => Ok(DefinitionQueryVersionStoreYamlOutcome::Conflict),
+                http::StatusCode::CONFLICT => {
+                    Ok(DefinitionQueryVersionStoreYamlOutcome::Conflict {
+                        body: answer.error_body(),
+                    })
+                }
                 _ => Err(answer.into_undocumented()),
             }
         }

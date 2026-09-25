@@ -474,6 +474,152 @@ pub(crate) fn rest_optional_override(
         .find(|o| o.dto == dto && o.field == field)
 }
 
+/// One REST-contract member that reads as its `Default` when the wire omits
+/// it, although the vendored OAS schema lists it under `required`: the
+/// generated field keeps its type and carries `#[serde(default)]`.
+pub(crate) struct RestDefaultMember {
+    pub dto: &'static str,
+    pub field: &'static str,
+    pub citation: &'static str,
+    pub reason: &'static str,
+}
+
+/// The members of the generated ITS-REST contract that read as their
+/// `Default` when absent (`emit-rest`).
+pub(crate) const REST_DEFAULT_MEMBERS: &[RestDefaultMember] = &[RestDefaultMember {
+    dto: "Error",
+    field: "validationErrors",
+    citation: "ITS-REST `responses/400.yaml`: \"The response body MAY contain error \
+               details\" — the released text makes the whole error body optional and \
+               binds no client's reading of one; no openEHR spec governs a client's \
+               tolerance of a partial `Error` — our own design",
+    reason: "A service that answers `{\"message\": …}` alone still sends its \
+             diagnostics; an empty list reads them, a decode refusal loses them.",
+}];
+
+/// The default-when-absent correction for `(dto, field)`, or `None`.
+pub(crate) fn rest_default_member(dto: &str, field: &str) -> Option<&'static RestDefaultMember> {
+    REST_DEFAULT_MEMBERS
+        .iter()
+        .find(|o| o.dto == dto && o.field == field)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// REST request headers the docs text defines (no OAS parameter declares them)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// One request header the ITS-REST docs text defines for a set of operations
+/// that the vendored OAS declares no parameter for. `emit-rest` appends it to
+/// each named operation's parameters as an optional header, so the param
+/// struct, the server trait and the generated client all carry it.
+pub(crate) struct RestDocsTextHeader {
+    /// The header name on the wire.
+    pub name: &'static str,
+    /// Whether the header MAY repeat (one field line per value): a `Vec<String>`
+    /// parameter, one field line per item, rather than a `String`.
+    pub list: bool,
+    /// The `operationId`s the header applies to.
+    pub operations: &'static [&'static str],
+    pub citation: &'static str,
+    pub reason: &'static str,
+}
+
+/// The operations that commit a change-controlled resource directly, on which
+/// the docs text mandates the committal-metadata headers: the `PUT`, `POST`
+/// and `DELETE` operations on COMPOSITION, `EHR_STATUS`, the directory FOLDER,
+/// the EHR creation that commits the first `EHR_STATUS` version, and the
+/// demographic `PARTY` and `PARTY_RELATIONSHIP` resources. A `CONTRIBUTION` carries
+/// its own `AUDIT_DETAILS` and `VERSION` attributes in the body, and the `ITEM_TAG`
+/// operations stand outside change control.
+const COMMIT_OPERATIONS: &[&str] = &[
+    "ehr_create",
+    "ehr_create_with_id",
+    "ehr_status_update",
+    "composition_create",
+    "composition_update",
+    "composition_delete",
+    "directory_create",
+    "directory_update",
+    "directory_delete",
+    "agent_create",
+    "agent_update",
+    "agent_delete",
+    "group_create",
+    "group_update",
+    "group_delete",
+    "organisation_create",
+    "organisation_update",
+    "organisation_delete",
+    "person_create",
+    "person_update",
+    "person_delete",
+    "role_create",
+    "role_update",
+    "role_delete",
+    "party_relationship_create",
+    "party_relationship_update",
+    "party_relationship_delete",
+];
+
+/// The request headers the ITS-REST docs text defines beyond the OAS
+/// parameters (`emit-rest`).
+pub(crate) const REST_DOCS_TEXT_HEADERS: &[RestDocsTextHeader] = &[
+    RestDocsTextHeader {
+        name: "openehr-version",
+        list: false,
+        operations: COMMIT_OPERATIONS,
+        citation: "ITS-REST `docs/overview/Requests_and_responses.md` §openehr-version and \
+                   openehr-audit-details — \"services MUST accept `openehr-version` and \
+                   `openehr-audit-details` custom request headers\" on the `PUT`, `POST` \
+                   and `DELETE` methods of every change-controlled resource",
+        reason: "The VERSION attributes of the commit (`lifecycle_state.code_string=\"532\"`); \
+                 the OAS declares no parameter for it.",
+    },
+    RestDocsTextHeader {
+        name: "openehr-audit-details",
+        list: true,
+        operations: COMMIT_OPERATIONS,
+        citation: "ITS-REST `docs/overview/Requests_and_responses.md` §openehr-version and \
+                   openehr-audit-details — the same mandate; the section's example sends \
+                   the header as several field lines, one per AUDIT_DETAILS attribute",
+        reason: "The AUDIT_DETAILS attributes of the commit (`change_type`, `description`, \
+                 `committer`, `system_id`); the OAS declares no parameter for it.",
+    },
+    RestDocsTextHeader {
+        name: "openehr-template-id",
+        list: false,
+        operations: &[
+            "composition_create",
+            "composition_update",
+            "contribution_create",
+        ],
+        citation: "ITS-REST `docs/overview/Requests_and_responses.md` §openehr-template-id — \
+                   \"MUST be used whenever committing COMPOSITION (via `PUT` or `POST` \
+                   methods) using a Simplified Format which does not support TEMPLATE_ID \
+                   value\"; a CONTRIBUTION `POST` commits COMPOSITIONs too",
+        reason: "The template a Simplified Formats COMPOSITION body is validated against; \
+                 the OAS declares no parameter for it.",
+    },
+];
+
+/// The docs-text headers that apply to `operation_id`, in table order.
+pub(crate) fn rest_docs_text_headers(
+    operation_id: &str,
+) -> impl Iterator<Item = &'static RestDocsTextHeader> {
+    REST_DOCS_TEXT_HEADERS
+        .iter()
+        .filter(move |h| h.operations.contains(&operation_id))
+}
+
+/// The docs-text header `name` on `operation_id`, or `None` when the OAS
+/// declared it.
+pub(crate) fn rest_docs_text_header(
+    operation_id: &str,
+    name: &str,
+) -> Option<&'static RestDocsTextHeader> {
+    rest_docs_text_headers(operation_id).find(|h| h.name == name)
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Field-level type overrides
 // ─────────────────────────────────────────────────────────────────────────────

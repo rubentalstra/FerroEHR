@@ -24,7 +24,10 @@ pub struct Error {
     /// The `message` property of `Error`.
     pub message: String,
     /// The `validationErrors` property of `Error`.
+    /// DEFAULT when absent — ITS-REST `responses/400.yaml`: "The response body MAY contain error details" — the released text makes the whole error body optional and binds no client's reading of one; no openEHR spec governs a client's tolerance of a partial `Error` — our own design
+    /// (A service that answers `{"message": …}` alone still sends its diagnostics; an empty list reads them, a decode refusal loses them.)
     #[serde(rename = "validationErrors")]
+    #[serde(default)]
     pub validation_errors: Vec<String>,
 }
 

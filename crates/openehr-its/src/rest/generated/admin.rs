@@ -70,7 +70,10 @@ pub mod client {
         /// The `204` answer.
         NoContent,
         /// The `404` answer.
-        NotFound,
+        NotFound {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The outcome of `DELETE /admin/ehr/all{?ehr_id*}`: one variant per status the OAS documents.
@@ -82,9 +85,15 @@ pub mod client {
         /// The `204` answer.
         NoContent,
         /// The `404` answer.
-        NotFound,
+        NotFound {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
         /// The `405` answer.
-        MethodNotAllowed,
+        MethodNotAllowed {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The `admin` API group over one configured CDR.
@@ -121,7 +130,9 @@ pub mod client {
             match answer.status() {
                 http::StatusCode::ACCEPTED => Ok(AdminEhrDeleteOutcome::Accepted),
                 http::StatusCode::NO_CONTENT => Ok(AdminEhrDeleteOutcome::NoContent),
-                http::StatusCode::NOT_FOUND => Ok(AdminEhrDeleteOutcome::NotFound),
+                http::StatusCode::NOT_FOUND => Ok(AdminEhrDeleteOutcome::NotFound {
+                    body: answer.error_body(),
+                }),
                 _ => Err(answer.into_undocumented()),
             }
         }
@@ -147,9 +158,13 @@ pub mod client {
             match answer.status() {
                 http::StatusCode::ACCEPTED => Ok(AdminEhrDeleteAllOutcome::Accepted),
                 http::StatusCode::NO_CONTENT => Ok(AdminEhrDeleteAllOutcome::NoContent),
-                http::StatusCode::NOT_FOUND => Ok(AdminEhrDeleteAllOutcome::NotFound),
+                http::StatusCode::NOT_FOUND => Ok(AdminEhrDeleteAllOutcome::NotFound {
+                    body: answer.error_body(),
+                }),
                 http::StatusCode::METHOD_NOT_ALLOWED => {
-                    Ok(AdminEhrDeleteAllOutcome::MethodNotAllowed)
+                    Ok(AdminEhrDeleteAllOutcome::MethodNotAllowed {
+                        body: answer.error_body(),
+                    })
                 }
                 _ => Err(answer.into_undocumented()),
             }

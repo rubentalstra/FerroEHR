@@ -62,7 +62,7 @@ layered, so a consumer takes only what it reads:
 | `schema-validation` | `json::validate_canonical` | `json` + `jsonschema`, the embedded RM schema |
 | `rest` | `rest::generated` (DTOs, param structs, route tables), `rest::runtime::ApiError` | `json` + `http` |
 | `rest-server` | the per-group `#[async_trait]` server traits, the `axum` response mapping of `ApiError` | `rest` + `axum`, `async-trait` |
-| `rest-client` | the per-group clients `rest::generated::<group>::client`, the client runtime `rest::client` | `rest` + `reqwest`, `url`, `urlencoding`, `base64`, `backon`, `async-trait` |
+| `rest-client` | the per-group clients `rest::generated::<group>::client`, the client runtime `rest::client` | `rest` + `reqwest`, `url`, `urlencoding`, `base64`, `backon`, `secrecy`, `async-trait` |
 
 Every surface needs a feature: with `default-features = false` and nothing
 else the crate compiles empty.
@@ -85,11 +85,19 @@ the selections are checked rather than claimed.
 
 With `rest-client`, each ITS-REST API group has a generated client over one
 configured `rest::client::Client`. Every operation takes its param struct
-(path, query and header parameters, `Prefer` and `If-Match` among them) and
-answers an outcome enum with one variant per status the OpenAPI documents for
-it; declared response headers such as `ETag` and `Location` arrive in a
-per-answer `headers` struct. The base is a `url::Url` ending in the API
-version segment, so the caller depends on the `url` crate too.
+(path, query and header parameters: `Prefer`, `If-Match`, and on the commit
+operations the committal-metadata headers `openehr-version`,
+`openehr-audit-details` and `openehr-template-id` the ITS-REST overview
+defines) and answers an outcome enum with one variant per status the OpenAPI
+documents for it; declared response headers such as `ETag` and `Location`
+arrive in a per-answer `headers` struct, and every `4xx` variant carries the
+answer body as an `ErrorBody` (the bytes as received, decoded as the ITS-REST
+`Error` when they are one, with `message()` and `validation_errors()`). A
+path parameter is percent-encoded with `:` kept literal, so a version uid
+travels as the specification writes it. The base is a `url::Url` ending in
+the API version segment, so the caller depends on the `url` crate too; a
+credential secret is a `secrecy::SecretString`, built from a `String` with
+`into()`.
 
 ```rust,no_run
 use std::time::Duration;
@@ -101,10 +109,8 @@ use openehr_its::rest::generated::ehr::client::{EhrClient, EhrGetByIdOutcome};
 async fn fetch_ehr(ehr_id: &str) -> Result<(), Box<dyn std::error::Error>> {
     let transport = ReqwestTransport::with_timeout(Duration::from_secs(30))?;
     let base = url::Url::parse("https://cdr.example.org/openehr/v1")?;
-    let client = Client::new(transport, base)?.with_credentials(Credentials::Basic {
-        user: "reader".to_owned(),
-        password: "secret".to_owned(),
-    });
+    let client =
+        Client::new(transport, base)?.with_credentials(Credentials::basic("reader", "secret"));
 
     let params = EhrGetByIdParams { ehr_id: ehr_id.to_owned(), accept: None };
     match EhrClient::new(&client).ehr_get_by_id(&params).await? {
@@ -113,7 +119,10 @@ async fn fetch_ehr(ehr_id: &str) -> Result<(), Box<dyn std::error::Error>> {
             let _ehr = body;
             let _content_type = headers.content_type;
         }
-        EhrGetByIdOutcome::NotFound => {}
+        EhrGetByIdOutcome::NotFound { body } => {
+            // The service's own diagnostics, when it sent any.
+            let _message = body.message();
+        }
     }
     Ok(())
 }
@@ -121,7 +130,7 @@ async fn fetch_ehr(ehr_id: &str) -> Result<(), Box<dyn std::error::Error>> {
 
 A status the operation does not document is `ClientError::UndocumentedStatus`;
 `401`, `403` and a `5xx` are `ClientError::Unauthorized`, `Forbidden` and
-`ServiceFailure`. Idempotent requests (`GET`, `HEAD`, `OPTIONS`, `PUT`,
+`ServiceFailure`, each carrying the answer body as an `ErrorBody`. Idempotent requests (`GET`, `HEAD`, `OPTIONS`, `PUT`,
 `DELETE`) are retried after a transport failure, a timeout or a `5xx`, within
 the budget `Client::with_retry` sets; a `POST` is sent once. The HTTP engine is
 the `Transport` trait, so another `http`-speaking client can replace

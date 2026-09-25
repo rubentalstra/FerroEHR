@@ -332,9 +332,15 @@ pub mod client {
             headers: QueryExecuteAdhocQueryOkHeaders,
         },
         /// The `400` answer.
-        BadRequest,
+        BadRequest {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
         /// The `408` answer.
-        RequestTimeout,
+        RequestTimeout {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The response headers the OAS declares for the `200` answer of
@@ -359,9 +365,15 @@ pub mod client {
             headers: QueryExecuteAdhocQueryBodyOkHeaders,
         },
         /// The `400` answer.
-        BadRequest,
+        BadRequest {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
         /// The `408` answer.
-        RequestTimeout,
+        RequestTimeout {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The response headers the OAS declares for the `200` answer of
@@ -386,11 +398,20 @@ pub mod client {
             headers: QueryExecuteStoredQueryOkHeaders,
         },
         /// The `400` answer.
-        BadRequest,
+        BadRequest {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
         /// The `404` answer.
-        NotFound,
+        NotFound {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
         /// The `408` answer.
-        RequestTimeout,
+        RequestTimeout {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The response headers the OAS declares for the `200` answer of
@@ -415,11 +436,20 @@ pub mod client {
             headers: QueryExecuteStoredQueryBodyOkHeaders,
         },
         /// The `400` answer.
-        BadRequest,
+        BadRequest {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
         /// The `404` answer.
-        NotFound,
+        NotFound {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
         /// The `408` answer.
-        RequestTimeout,
+        RequestTimeout {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The response headers the OAS declares for the `200` answer of
@@ -444,11 +474,20 @@ pub mod client {
             headers: QueryExecuteStoredQueryVersionOkHeaders,
         },
         /// The `400` answer.
-        BadRequest,
+        BadRequest {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
         /// The `404` answer.
-        NotFound,
+        NotFound {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
         /// The `408` answer.
-        RequestTimeout,
+        RequestTimeout {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The response headers the OAS declares for the `200` answer of
@@ -473,11 +512,20 @@ pub mod client {
             headers: QueryExecuteStoredQueryVersionBodyOkHeaders,
         },
         /// The `400` answer.
-        BadRequest,
+        BadRequest {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
         /// The `404` answer.
-        NotFound,
+        NotFound {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
         /// The `408` answer.
-        RequestTimeout,
+        RequestTimeout {
+            /// The error body as received, decoded as the ITS-REST `Error` when it is one.
+            body: crate::rest::client::ErrorBody,
+        },
     }
 
     /// The `query` API group over one configured CDR.
@@ -538,9 +586,13 @@ pub mod client {
                         content_type: answer.header("Content-Type"),
                     },
                 }),
-                http::StatusCode::BAD_REQUEST => Ok(QueryExecuteAdhocQueryOutcome::BadRequest),
+                http::StatusCode::BAD_REQUEST => Ok(QueryExecuteAdhocQueryOutcome::BadRequest {
+                    body: answer.error_body(),
+                }),
                 http::StatusCode::REQUEST_TIMEOUT => {
-                    Ok(QueryExecuteAdhocQueryOutcome::RequestTimeout)
+                    Ok(QueryExecuteAdhocQueryOutcome::RequestTimeout {
+                        body: answer.error_body(),
+                    })
                 }
                 _ => Err(answer.into_undocumented()),
             }
@@ -575,9 +627,15 @@ pub mod client {
                         content_type: answer.header("Content-Type"),
                     },
                 }),
-                http::StatusCode::BAD_REQUEST => Ok(QueryExecuteAdhocQueryBodyOutcome::BadRequest),
+                http::StatusCode::BAD_REQUEST => {
+                    Ok(QueryExecuteAdhocQueryBodyOutcome::BadRequest {
+                        body: answer.error_body(),
+                    })
+                }
                 http::StatusCode::REQUEST_TIMEOUT => {
-                    Ok(QueryExecuteAdhocQueryBodyOutcome::RequestTimeout)
+                    Ok(QueryExecuteAdhocQueryBodyOutcome::RequestTimeout {
+                        body: answer.error_body(),
+                    })
                 }
                 _ => Err(answer.into_undocumented()),
             }
@@ -629,10 +687,16 @@ pub mod client {
                         content_type: answer.header("Content-Type"),
                     },
                 }),
-                http::StatusCode::BAD_REQUEST => Ok(QueryExecuteStoredQueryOutcome::BadRequest),
-                http::StatusCode::NOT_FOUND => Ok(QueryExecuteStoredQueryOutcome::NotFound),
+                http::StatusCode::BAD_REQUEST => Ok(QueryExecuteStoredQueryOutcome::BadRequest {
+                    body: answer.error_body(),
+                }),
+                http::StatusCode::NOT_FOUND => Ok(QueryExecuteStoredQueryOutcome::NotFound {
+                    body: answer.error_body(),
+                }),
                 http::StatusCode::REQUEST_TIMEOUT => {
-                    Ok(QueryExecuteStoredQueryOutcome::RequestTimeout)
+                    Ok(QueryExecuteStoredQueryOutcome::RequestTimeout {
+                        body: answer.error_body(),
+                    })
                 }
                 _ => Err(answer.into_undocumented()),
             }
@@ -672,10 +736,18 @@ pub mod client {
                         content_type: answer.header("Content-Type"),
                     },
                 }),
-                http::StatusCode::BAD_REQUEST => Ok(QueryExecuteStoredQueryBodyOutcome::BadRequest),
-                http::StatusCode::NOT_FOUND => Ok(QueryExecuteStoredQueryBodyOutcome::NotFound),
+                http::StatusCode::BAD_REQUEST => {
+                    Ok(QueryExecuteStoredQueryBodyOutcome::BadRequest {
+                        body: answer.error_body(),
+                    })
+                }
+                http::StatusCode::NOT_FOUND => Ok(QueryExecuteStoredQueryBodyOutcome::NotFound {
+                    body: answer.error_body(),
+                }),
                 http::StatusCode::REQUEST_TIMEOUT => {
-                    Ok(QueryExecuteStoredQueryBodyOutcome::RequestTimeout)
+                    Ok(QueryExecuteStoredQueryBodyOutcome::RequestTimeout {
+                        body: answer.error_body(),
+                    })
                 }
                 _ => Err(answer.into_undocumented()),
             }
@@ -730,11 +802,19 @@ pub mod client {
                     },
                 }),
                 http::StatusCode::BAD_REQUEST => {
-                    Ok(QueryExecuteStoredQueryVersionOutcome::BadRequest)
+                    Ok(QueryExecuteStoredQueryVersionOutcome::BadRequest {
+                        body: answer.error_body(),
+                    })
                 }
-                http::StatusCode::NOT_FOUND => Ok(QueryExecuteStoredQueryVersionOutcome::NotFound),
+                http::StatusCode::NOT_FOUND => {
+                    Ok(QueryExecuteStoredQueryVersionOutcome::NotFound {
+                        body: answer.error_body(),
+                    })
+                }
                 http::StatusCode::REQUEST_TIMEOUT => {
-                    Ok(QueryExecuteStoredQueryVersionOutcome::RequestTimeout)
+                    Ok(QueryExecuteStoredQueryVersionOutcome::RequestTimeout {
+                        body: answer.error_body(),
+                    })
                 }
                 _ => Err(answer.into_undocumented()),
             }
@@ -777,13 +857,19 @@ pub mod client {
                     },
                 }),
                 http::StatusCode::BAD_REQUEST => {
-                    Ok(QueryExecuteStoredQueryVersionBodyOutcome::BadRequest)
+                    Ok(QueryExecuteStoredQueryVersionBodyOutcome::BadRequest {
+                        body: answer.error_body(),
+                    })
                 }
                 http::StatusCode::NOT_FOUND => {
-                    Ok(QueryExecuteStoredQueryVersionBodyOutcome::NotFound)
+                    Ok(QueryExecuteStoredQueryVersionBodyOutcome::NotFound {
+                        body: answer.error_body(),
+                    })
                 }
                 http::StatusCode::REQUEST_TIMEOUT => {
-                    Ok(QueryExecuteStoredQueryVersionBodyOutcome::RequestTimeout)
+                    Ok(QueryExecuteStoredQueryVersionBodyOutcome::RequestTimeout {
+                        body: answer.error_body(),
+                    })
                 }
                 _ => Err(answer.into_undocumented()),
             }
