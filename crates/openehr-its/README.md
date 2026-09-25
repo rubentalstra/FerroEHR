@@ -21,9 +21,10 @@ this one.
 - **Canonical XML**: generated `ToXml`/`FromXml` implementations over a
   `quick-xml` runtime, serving both published XSD lineages (the root
   namespace is a serialize-time choice).
-- **ITS-REST contract**: generated DTOs, `#[async_trait]` server traits, and
-  route tables for every ITS-REST 1.1.0 API group, ready to implement over
-  `axum`.
+- **ITS-REST contract**: generated DTOs, `#[async_trait]` server traits,
+  per-group clients and route tables for every ITS-REST 1.1.0 API group. A
+  server implements the traits over `axum`; a consumer calls a CDR through the
+  clients.
 - **Wire validation**: `wire_validate`, the wire-boundary dispatcher for the
   RM class invariants, refusing undeclared keys and routing every class to
   its invariant checks in `openehr_rm::validate`.
@@ -59,7 +60,9 @@ layered, so a consumer takes only what it reads:
 | `xml` | `xml`, `aom2`, `aom2_model` | `json` + `quick-xml` |
 | `opt14` | `opt14` | `xml` |
 | `schema-validation` | `json::validate_canonical` | `json` + `jsonschema`, the embedded RM schema |
-| `rest-server` | `rest::generated`, `rest::runtime` | `json` + `axum`, `http`, `async-trait` |
+| `rest` | `rest::generated` (DTOs, param structs, route tables), `rest::runtime::ApiError` | `json` + `http` |
+| `rest-server` | the per-group `#[async_trait]` server traits, the `axum` response mapping of `ApiError` | `rest` + `axum`, `async-trait` |
+| `rest-client` | the per-group clients `rest::generated::<group>::client`, the client runtime `rest::client` | `rest` + `reqwest`, `url`, `urlencoding`, `base64`, `backon`, `async-trait` |
 
 Every surface needs a feature: with `default-features = false` and nothing
 else the crate compiles empty.
@@ -72,10 +75,58 @@ $ cargo add openehr-its --no-default-features --features opt14
 
 That selection carries the openEHR content layers: canonical JSON, canonical
 XML and OPT 1.4. `opt14` pulls `xml` and `json` in with it.
-`schema-validation` and `rest-server` stay out; the second is the server half
-of the contract, which a client never implements. FerroEHR's CI builds the
-crate for that target on every code change, so the selection is checked rather
-than claimed.
+`schema-validation` and the three REST features stay out of it: `rest-server`
+is the server half of the contract, which a client never implements, and
+`rest-client` sends through `reqwest`. FerroEHR's CI builds the wasm selection
+on every code change and clippies each REST feature on its own natively, so
+the selections are checked rather than claimed.
+
+## Calling a CDR
+
+With `rest-client`, each ITS-REST API group has a generated client over one
+configured `rest::client::Client`. Every operation takes its param struct
+(path, query and header parameters, `Prefer` and `If-Match` among them) and
+answers an outcome enum with one variant per status the OpenAPI documents for
+it; declared response headers such as `ETag` and `Location` arrive in a
+per-answer `headers` struct. The base is a `url::Url` ending in the API
+version segment, so the caller depends on the `url` crate too.
+
+```rust,no_run
+use std::time::Duration;
+
+use openehr_its::rest::client::{Client, Credentials, ReqwestTransport};
+use openehr_its::rest::generated::ehr::EhrGetByIdParams;
+use openehr_its::rest::generated::ehr::client::{EhrClient, EhrGetByIdOutcome};
+
+async fn fetch_ehr(ehr_id: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let transport = ReqwestTransport::with_timeout(Duration::from_secs(30))?;
+    let base = url::Url::parse("https://cdr.example.org/openehr/v1")?;
+    let client = Client::new(transport, base)?.with_credentials(Credentials::Basic {
+        user: "reader".to_owned(),
+        password: "secret".to_owned(),
+    });
+
+    let params = EhrGetByIdParams { ehr_id: ehr_id.to_owned(), accept: None };
+    match EhrClient::new(&client).ehr_get_by_id(&params).await? {
+        EhrGetByIdOutcome::Ok { body, headers } => {
+            // `body` is the decoded `openehr_rm` EHR.
+            let _ehr = body;
+            let _content_type = headers.content_type;
+        }
+        EhrGetByIdOutcome::NotFound => {}
+    }
+    Ok(())
+}
+```
+
+A status the operation does not document is `ClientError::UndocumentedStatus`;
+`401`, `403` and a `5xx` are `ClientError::Unauthorized`, `Forbidden` and
+`ServiceFailure`. Idempotent requests (`GET`, `HEAD`, `OPTIONS`, `PUT`,
+`DELETE`) are retried after a transport failure, a timeout or a `5xx`, within
+the budget `Client::with_retry` sets; a `POST` is sent once. The HTTP engine is
+the `Transport` trait, so another `http`-speaking client can replace
+`ReqwestTransport`, and `Client::execute` sends a request the typed surface
+does not build.
 
 ## Generated code — do not edit
 

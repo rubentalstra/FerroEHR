@@ -20,6 +20,7 @@ path = "src/main.rs"
 serde_json.workspace = true
 roxmltree.workspace = true      # XSD reader (emit-xml)
 serde_norway.workspace = true   # OAS YAML reader (emit-rest)
+http.workspace = true           # the status registry the emitted client outcomes name (emit-rest)
 
 [lints]
 workspace = true

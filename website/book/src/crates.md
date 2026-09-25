@@ -21,8 +21,8 @@ vendored specification text.
 
 ```toml
 [dependencies]
-openehr-rm = "0.0.70"
-openehr-its = "0.0.70"
+openehr-rm = "0.0.71"
+openehr-its = "0.0.71"
 ```
 
 All nine are **edition 2024** with an MSRV of **Rust 1.97**, and all nine
@@ -99,14 +99,19 @@ one: `openehr_its::SPEC_VERSION`, `openehr_sdt::SPEC_VERSION`,
 
 `openehr-its` layers its features so a browser or embedded consumer does not
 have to compile an HTTP server to read a template. The parsing spine is
-`json` → `xml` → `opt14`, each pulling in the one below it. Two layers sit
-beside the spine and are declined independently: `schema-validation`
-(validation against the compiled-in ITS-JSON RM schema, its only `jsonschema`
-user) and `rest-server` (the generated ITS-REST contract and its response
-runtime, which is what brings in `axum`). The default feature `full` is all
-five, so an existing dependency line keeps the crate it had. With
-`default-features = false` and no feature at all, `openehr-its` compiles
-empty.
+`json` → `xml` → `opt14`, each pulling in the one below it. Beside the spine
+sit `schema-validation` (validation against the compiled-in ITS-JSON RM
+schema, its only `jsonschema` user) and three ITS-REST features. `rest` is the
+generated contract (DTOs, parameter structs, route tables and the `ApiError`
+type) over serde and `http`, with no HTTP engine. `rest-server` adds the
+per-group server traits and the `axum` response mapping, which is what brings
+in `axum`. `rest-client` adds a generated client per API group over a runtime
+that sends through `reqwest`: each operation answers one outcome variant per
+status the OpenAPI documents, and an undocumented status is an error. A
+consumer that calls a CDR takes `rest-client` and never compiles `axum`. The
+default feature `full` is all seven, so an existing dependency line keeps the
+crate it had. With `default-features = false` and no feature at all,
+`openehr-its` compiles empty.
 
 `openehr-sdt` sits on top: its `flat` feature pulls `openehr-its` with `opt14`
 and adds the Simplified Formats and RM-instance validation, and `cache` adds
@@ -117,8 +122,8 @@ OPT 1.4 template:
 
 ```toml
 [dependencies]
-openehr-its = { version = "0.0.70", default-features = false, features = ["opt14"] }
-openehr-sdt = { version = "0.0.70", default-features = false, features = ["flat"] }
+openehr-its = { version = "0.0.71", default-features = false, features = ["opt14"] }
+openehr-sdt = { version = "0.0.71", default-features = false, features = ["flat"] }
 ```
 
 With `default-features = false` and no feature at all, `openehr-sdt` compiles

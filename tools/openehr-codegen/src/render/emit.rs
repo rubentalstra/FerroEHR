@@ -48,6 +48,11 @@ use std::collections::{BTreeMap, BTreeSet};
 /// `xs:anyType`, an out-of-closure reference). The `expect` is scoped to the
 /// one file and stays honest: comment-only mentions insert nothing, and a
 /// regeneration that stops carrying the type drops the attribute with it.
+///
+/// A body with feature-gated regions (`#[cfg(feature = …)]` — the ITS-REST
+/// group modules, whose server trait and client are each behind a feature)
+/// gets `#![allow(…)]` instead: the carrier may sit inside a gated region, so
+/// under a selection without that feature an `expect` would be unfulfilled.
 pub(crate) fn guard_value_carriers(body: &str) -> String {
     let code_carries = body.lines().any(|l| {
         let t = l.trim_start();
@@ -77,10 +82,17 @@ pub(crate) fn guard_value_carriers(body: &str) -> String {
             break;
         }
     }
-    let guard = "#![expect(\n    clippy::disallowed_types,\n    reason = \"adjudicated free-form JSON \
-                 slots: serde_json::Value is workspace-banned (#1694); a generated carrier exists only \
-                 where the spec leaves the slot open, and each adjudicated field's NOTE names its \
-                 citation\"\n)]\n";
+    let guard = if body.contains("#[cfg(feature") {
+        "#![allow(\n    clippy::disallowed_types,\n    reason = \"adjudicated free-form JSON \
+         slots: serde_json::Value is workspace-banned (#1694); a generated carrier exists only \
+         where the spec leaves the slot open — `allow`, not `expect`, because a carrier may sit \
+         inside a feature-gated region and fire only under that feature\"\n)]\n"
+    } else {
+        "#![expect(\n    clippy::disallowed_types,\n    reason = \"adjudicated free-form JSON \
+         slots: serde_json::Value is workspace-banned (#1694); a generated carrier exists only \
+         where the spec leaves the slot open, and each adjudicated field's NOTE names its \
+         citation\"\n)]\n"
+    };
     // `at` accumulates whole-line lengths from `split_inclusive`, so it is a
     // char boundary by construction.
     let (head, tail) = body.split_at(at);

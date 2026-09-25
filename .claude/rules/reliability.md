@@ -362,6 +362,20 @@ chapters, the Clippy book, and the Cargo/rustdoc books.)
   exercised rather than trusted. Honest about its own limits: no check can tell
   an invented name from a real one or read intent out of a `tracing` field, so
   the synthetic-data and telemetry rules stay review-enforced at the boundary.
+- **No Apache-2.0 crate depends on a BUSL-1.1 crate** (owner request
+  2026-09-25, issue #3485). The six Apache-2.0 crates (`openehr-base`,
+  `openehr-lang`, `openehr-term`, `openehr-rm`, `openehr-am`, `openehr-its`)
+  publish so any Rust project can take them; a normal or build dependency on
+  `openehr-query`, `openehr-adl` or `openehr-sdt`, or a feature naming one,
+  would make every consumer of the wire layer compile BUSL code.
+  Dev-dependencies are exempt, because cargo strips them at packaging. Each
+  crate's `license` must also match its side, so relicensing a crate cannot
+  move it across silently, and a new crate under `crates/` must be placed on
+  one side before it passes. Enforcement (tier 4):
+  `scripts/checks/licence-boundary.sh`, run per-PR by the `licensing` CI job
+  over every `crates/*/Cargo.toml`, including `[target.*]` tables and
+  dependencies renamed with `package =`. Its detector is mutation-proven by its
+  own `--self-test`, which the job runs first.
 
 ## Recorded deviations from the API Guidelines (deliberate, owner-adjudicated)
 

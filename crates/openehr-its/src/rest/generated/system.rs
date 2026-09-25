@@ -10,6 +10,7 @@
     clippy::pedantic,
     clippy::nursery,
     dead_code,
+    unused_imports,
     unused_variables,
     reason = "mechanically generated contract text: the OAS is emitted in full (every DTO, param struct and route, whether or not this workspace consumes it yet), so style and dead-code lints do not apply — the hand-written runtime and the implementing adapter carry the lint bar"
 )]
@@ -52,6 +53,7 @@ pub struct OptionsParams {
 /// defaults to returning `ApiError::NotImplemented`, so an implementor
 /// (the application service, or a test stub) overrides only the
 /// operations it supports.
+#[cfg(feature = "rest-server")]
 #[async_trait::async_trait]
 pub trait SystemApi {
     /// `OPTIONS /`
@@ -63,6 +65,78 @@ pub trait SystemApi {
     }
 }
 
+/// The client half of the `system` API group (ITS-REST): one method per
+/// operation over a [`crate::rest::client::Client`], answering an outcome
+/// enum with one variant per status the OAS documents for it.
+#[cfg(feature = "rest-client")]
+pub mod client {
+    use super::*;
+
+    /// The response headers the OAS declares for the `200` answer of
+    /// `OPTIONS /`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct OptionsOkHeaders {
+        /// The `Allow` response header.
+        pub allow: Option<String>,
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+    }
+
+    /// The outcome of `OPTIONS /`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum OptionsOutcome {
+        /// The `200` answer.
+        Ok {
+            /// The body, decoded from canonical JSON.
+            body: Options,
+            /// The response headers the OAS declares for this answer.
+            headers: OptionsOkHeaders,
+        },
+    }
+
+    /// The `system` API group over one configured CDR.
+    #[derive(Debug, Clone, Copy)]
+    pub struct SystemClient<'c, T> {
+        client: &'c crate::rest::client::Client<T>,
+    }
+
+    impl<'c, T: crate::rest::client::Transport> SystemClient<'c, T> {
+        /// The `system` API group over `client`.
+        #[must_use]
+        pub fn new(client: &'c crate::rest::client::Client<T>) -> Self {
+            Self { client }
+        }
+
+        /// `OPTIONS /`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn options(
+            &self,
+            params: &OptionsParams,
+        ) -> Result<OptionsOutcome, crate::rest::client::ClientError> {
+            let mut request =
+                crate::rest::client::Request::new(http::Method::OPTIONS, String::from("/"));
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::OK => Ok(OptionsOutcome::Ok {
+                    body: answer.json()?,
+                    headers: OptionsOkHeaders {
+                        allow: answer.header("Allow"),
+                        content_type: answer.header("Content-Type"),
+                    },
+                }),
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+    }
+}
 /// The operations of this group as `(method, path, operation_id)`, for
 /// wiring an axum router in `ferroehr-rest`.
 pub const ROUTES: &[(&str, &str, &str)] = &[("OPTIONS", "/", "options")];

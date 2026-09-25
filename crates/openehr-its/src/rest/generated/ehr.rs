@@ -10,12 +10,13 @@
     clippy::pedantic,
     clippy::nursery,
     dead_code,
+    unused_imports,
     unused_variables,
     reason = "mechanically generated contract text: the OAS is emitted in full (every DTO, param struct and route, whether or not this workspace consumes it yet), so style and dead-code lints do not apply — the hand-written runtime and the implementing adapter carry the lint bar"
 )]
-#![expect(
+#![allow(
     clippy::disallowed_types,
-    reason = "adjudicated free-form JSON slots: serde_json::Value is workspace-banned (#1694); a generated carrier exists only where the spec leaves the slot open, and each adjudicated field's NOTE names its citation"
+    reason = "adjudicated free-form JSON slots: serde_json::Value is workspace-banned (#1694); a generated carrier exists only where the spec leaves the slot open — `allow`, not `expect`, because a carrier may sit inside a feature-gated region and fire only under that feature"
 )]
 use serde::{Deserialize, Serialize};
 
@@ -737,6 +738,7 @@ pub struct EhrStatusTagsDeleteParams {
 /// defaults to returning `ApiError::NotImplemented`, so an implementor
 /// (the application service, or a test stub) overrides only the
 /// operations it supports.
+#[cfg(feature = "rest-server")]
 #[async_trait::async_trait]
 pub trait EhrApi {
     /// `GET /ehr`
@@ -1002,6 +1004,2587 @@ pub trait EhrApi {
     }
 }
 
+/// The client half of the `ehr` API group (ITS-REST): one method per
+/// operation over a [`crate::rest::client::Client`], answering an outcome
+/// enum with one variant per status the OAS documents for it.
+#[cfg(feature = "rest-client")]
+pub mod client {
+    use super::*;
+
+    /// The response headers the OAS declares for the `200` answer of
+    /// `GET /ehr`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct EhrGetBySubjectOkHeaders {
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+    }
+
+    /// The outcome of `GET /ehr`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum EhrGetBySubjectOutcome {
+        /// The `200` answer.
+        Ok {
+            /// The body, decoded from canonical JSON.
+            body: openehr_rm::v1_2::ehr::ehr::Ehr,
+            /// The response headers the OAS declares for this answer.
+            headers: EhrGetBySubjectOkHeaders,
+        },
+        /// The `404` answer.
+        NotFound,
+    }
+
+    /// The response headers the OAS declares for the `201` answer of
+    /// `POST /ehr`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct EhrCreateCreatedHeaders {
+        /// The `ETag` response header.
+        pub etag: Option<String>,
+        /// The `Location` response header.
+        pub location: Option<String>,
+    }
+
+    /// The response headers the OAS declares for the `204` answer of
+    /// `POST /ehr`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct EhrCreateNoContentHeaders {
+        /// The `ETag` response header.
+        pub etag: Option<String>,
+        /// The `Location` response header.
+        pub location: Option<String>,
+    }
+
+    /// The outcome of `POST /ehr`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum EhrCreateOutcome {
+        /// The `201` answer.
+        Created {
+            /// The body, decoded from canonical JSON; `None` when the service sent none.
+            body: Option<serde_json::Value>,
+            /// The response headers the OAS declares for this answer.
+            headers: EhrCreateCreatedHeaders,
+        },
+        /// The `204` answer.
+        NoContent {
+            /// The response headers the OAS declares for this answer.
+            headers: EhrCreateNoContentHeaders,
+        },
+        /// The `400` answer.
+        BadRequest {
+            /// The body, decoded from canonical JSON; `None` when the service sent none.
+            body: Option<super::super::common::Error>,
+        },
+        /// The `409` answer.
+        Conflict,
+    }
+
+    /// The response headers the OAS declares for the `200` answer of
+    /// `GET /ehr/{ehr_id}`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct EhrGetByIdOkHeaders {
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+    }
+
+    /// The outcome of `GET /ehr/{ehr_id}`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum EhrGetByIdOutcome {
+        /// The `200` answer.
+        Ok {
+            /// The body, decoded from canonical JSON.
+            body: openehr_rm::v1_2::ehr::ehr::Ehr,
+            /// The response headers the OAS declares for this answer.
+            headers: EhrGetByIdOkHeaders,
+        },
+        /// The `404` answer.
+        NotFound,
+    }
+
+    /// The response headers the OAS declares for the `201` answer of
+    /// `PUT /ehr/{ehr_id}`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct EhrCreateWithIdCreatedHeaders {
+        /// The `ETag` response header.
+        pub etag: Option<String>,
+        /// The `Location` response header.
+        pub location: Option<String>,
+    }
+
+    /// The response headers the OAS declares for the `204` answer of
+    /// `PUT /ehr/{ehr_id}`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct EhrCreateWithIdNoContentHeaders {
+        /// The `ETag` response header.
+        pub etag: Option<String>,
+        /// The `Location` response header.
+        pub location: Option<String>,
+    }
+
+    /// The outcome of `PUT /ehr/{ehr_id}`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum EhrCreateWithIdOutcome {
+        /// The `201` answer.
+        Created {
+            /// The body, decoded from canonical JSON; `None` when the service sent none.
+            body: Option<serde_json::Value>,
+            /// The response headers the OAS declares for this answer.
+            headers: EhrCreateWithIdCreatedHeaders,
+        },
+        /// The `204` answer.
+        NoContent {
+            /// The response headers the OAS declares for this answer.
+            headers: EhrCreateWithIdNoContentHeaders,
+        },
+        /// The `400` answer.
+        BadRequest {
+            /// The body, decoded from canonical JSON; `None` when the service sent none.
+            body: Option<super::super::common::Error>,
+        },
+        /// The `409` answer.
+        Conflict,
+    }
+
+    /// The response headers the OAS declares for the `200` answer of
+    /// `GET /ehr/{ehr_id}/ehr_status/{version_uid}`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct EhrStatusGetByVersionIdOkHeaders {
+        /// The `ETag` response header.
+        pub etag: Option<String>,
+        /// The `Location` response header.
+        pub location: Option<String>,
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+        /// Every value of the `openehr-item-tag` response header, one per field line.
+        pub openehr_item_tag: Vec<String>,
+        /// Every value of the `openehr-version-item-tag` response header, one per field line.
+        pub openehr_version_item_tag: Vec<String>,
+    }
+
+    /// The outcome of `GET /ehr/{ehr_id}/ehr_status/{version_uid}`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum EhrStatusGetByVersionIdOutcome {
+        /// The `200` answer.
+        Ok {
+            /// The body, decoded from canonical JSON.
+            body: openehr_rm::v1_2::ehr::ehr_status::EhrStatus,
+            /// The response headers the OAS declares for this answer.
+            headers: EhrStatusGetByVersionIdOkHeaders,
+        },
+        /// The `404` answer.
+        NotFound,
+    }
+
+    /// The response headers the OAS declares for the `200` answer of
+    /// `GET /ehr/{ehr_id}/ehr_status`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct EhrStatusGetAtTimeOkHeaders {
+        /// The `ETag` response header.
+        pub etag: Option<String>,
+        /// The `Location` response header.
+        pub location: Option<String>,
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+        /// Every value of the `openehr-item-tag` response header, one per field line.
+        pub openehr_item_tag: Vec<String>,
+        /// Every value of the `openehr-version-item-tag` response header, one per field line.
+        pub openehr_version_item_tag: Vec<String>,
+    }
+
+    /// The outcome of `GET /ehr/{ehr_id}/ehr_status`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum EhrStatusGetAtTimeOutcome {
+        /// The `200` answer.
+        Ok {
+            /// The body, decoded from canonical JSON.
+            body: openehr_rm::v1_2::ehr::ehr_status::EhrStatus,
+            /// The response headers the OAS declares for this answer.
+            headers: EhrStatusGetAtTimeOkHeaders,
+        },
+        /// The `400` answer.
+        BadRequest {
+            /// The body, decoded from canonical JSON; `None` when the service sent none.
+            body: Option<super::super::common::Error>,
+        },
+        /// The `404` answer.
+        NotFound,
+    }
+
+    /// The response headers the OAS declares for the `200` answer of
+    /// `PUT /ehr/{ehr_id}/ehr_status`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct EhrStatusUpdateOkHeaders {
+        /// The `ETag` response header.
+        pub etag: Option<String>,
+        /// The `Location` response header.
+        pub location: Option<String>,
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+        /// Every value of the `openehr-item-tag` response header, one per field line.
+        pub openehr_item_tag: Vec<String>,
+        /// Every value of the `openehr-version-item-tag` response header, one per field line.
+        pub openehr_version_item_tag: Vec<String>,
+    }
+
+    /// The response headers the OAS declares for the `204` answer of
+    /// `PUT /ehr/{ehr_id}/ehr_status`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct EhrStatusUpdateNoContentHeaders {
+        /// The `ETag` response header.
+        pub etag: Option<String>,
+        /// The `Location` response header.
+        pub location: Option<String>,
+        /// Every value of the `openehr-item-tag` response header, one per field line.
+        pub openehr_item_tag: Vec<String>,
+        /// Every value of the `openehr-version-item-tag` response header, one per field line.
+        pub openehr_version_item_tag: Vec<String>,
+    }
+
+    /// The response headers the OAS declares for the `412` answer of
+    /// `PUT /ehr/{ehr_id}/ehr_status`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct EhrStatusUpdatePreconditionFailedHeaders {
+        /// The `ETag` response header.
+        pub etag: Option<String>,
+        /// The `Location` response header.
+        pub location: Option<String>,
+    }
+
+    /// The outcome of `PUT /ehr/{ehr_id}/ehr_status`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum EhrStatusUpdateOutcome {
+        /// The `200` answer.
+        Ok {
+            /// The body, decoded from canonical JSON.
+            body: serde_json::Value,
+            /// The response headers the OAS declares for this answer.
+            headers: EhrStatusUpdateOkHeaders,
+        },
+        /// The `204` answer.
+        NoContent {
+            /// The response headers the OAS declares for this answer.
+            headers: EhrStatusUpdateNoContentHeaders,
+        },
+        /// The `400` answer.
+        BadRequest {
+            /// The body, decoded from canonical JSON; `None` when the service sent none.
+            body: Option<super::super::common::Error>,
+        },
+        /// The `404` answer.
+        NotFound,
+        /// The `412` answer.
+        PreconditionFailed {
+            /// The response headers the OAS declares for this answer.
+            headers: EhrStatusUpdatePreconditionFailedHeaders,
+        },
+    }
+
+    /// The response headers the OAS declares for the `200` answer of
+    /// `GET /ehr/{ehr_id}/versioned_ehr_status`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct VersionedEhrStatusGetOkHeaders {
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+    }
+
+    /// The outcome of `GET /ehr/{ehr_id}/versioned_ehr_status`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum VersionedEhrStatusGetOutcome {
+        /// The `200` answer.
+        Ok {
+            /// The body, decoded from canonical JSON.
+            body: openehr_rm::v1_2::ehr::versioned_ehr_status::VersionedEhrStatus,
+            /// The response headers the OAS declares for this answer.
+            headers: VersionedEhrStatusGetOkHeaders,
+        },
+        /// The `404` answer.
+        NotFound,
+    }
+
+    /// The response headers the OAS declares for the `200` answer of
+    /// `GET /ehr/{ehr_id}/versioned_ehr_status/revision_history`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct VersionedEhrStatusRevisionHistoryOkHeaders {
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+    }
+
+    /// The outcome of `GET /ehr/{ehr_id}/versioned_ehr_status/revision_history`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum VersionedEhrStatusRevisionHistoryOutcome {
+        /// The `200` answer.
+        Ok {
+            /// The body, decoded from canonical JSON.
+            body: openehr_rm::v1_2::common::generic::revision_history::RevisionHistory,
+            /// The response headers the OAS declares for this answer.
+            headers: VersionedEhrStatusRevisionHistoryOkHeaders,
+        },
+        /// The `404` answer.
+        NotFound,
+    }
+
+    /// The response headers the OAS declares for the `200` answer of
+    /// `GET /ehr/{ehr_id}/versioned_ehr_status/version`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct VersionedEhrStatusVersionGetAtTimeOkHeaders {
+        /// The `ETag` response header.
+        pub etag: Option<String>,
+        /// The `Location` response header.
+        pub location: Option<String>,
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+    }
+
+    /// The outcome of `GET /ehr/{ehr_id}/versioned_ehr_status/version`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum VersionedEhrStatusVersionGetAtTimeOutcome {
+        /// The `200` answer.
+        Ok {
+            /// The body, decoded from canonical JSON.
+            body: VersionOfEhrStatus,
+            /// The response headers the OAS declares for this answer.
+            headers: VersionedEhrStatusVersionGetAtTimeOkHeaders,
+        },
+        /// The `400` answer.
+        BadRequest {
+            /// The body, decoded from canonical JSON; `None` when the service sent none.
+            body: Option<super::super::common::Error>,
+        },
+        /// The `404` answer.
+        NotFound,
+    }
+
+    /// The response headers the OAS declares for the `200` answer of
+    /// `GET /ehr/{ehr_id}/versioned_ehr_status/version/{version_uid}`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct VersionedEhrStatusVersionGetByIdOkHeaders {
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+    }
+
+    /// The outcome of `GET /ehr/{ehr_id}/versioned_ehr_status/version/{version_uid}`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum VersionedEhrStatusVersionGetByIdOutcome {
+        /// The `200` answer.
+        Ok {
+            /// The body, decoded from canonical JSON.
+            body: VersionOfEhrStatus,
+            /// The response headers the OAS declares for this answer.
+            headers: VersionedEhrStatusVersionGetByIdOkHeaders,
+        },
+        /// The `404` answer.
+        NotFound,
+    }
+
+    /// The response headers the OAS declares for the `201` answer of
+    /// `POST /ehr/{ehr_id}/composition`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct CompositionCreateCreatedHeaders {
+        /// The `ETag` response header.
+        pub etag: Option<String>,
+        /// The `Location` response header.
+        pub location: Option<String>,
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+        /// Every value of the `openehr-item-tag` response header, one per field line.
+        pub openehr_item_tag: Vec<String>,
+        /// Every value of the `openehr-version-item-tag` response header, one per field line.
+        pub openehr_version_item_tag: Vec<String>,
+    }
+
+    /// The response headers the OAS declares for the `204` answer of
+    /// `POST /ehr/{ehr_id}/composition`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct CompositionCreateNoContentHeaders {
+        /// The `ETag` response header.
+        pub etag: Option<String>,
+        /// The `Location` response header.
+        pub location: Option<String>,
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+        /// Every value of the `openehr-item-tag` response header, one per field line.
+        pub openehr_item_tag: Vec<String>,
+        /// Every value of the `openehr-version-item-tag` response header, one per field line.
+        pub openehr_version_item_tag: Vec<String>,
+    }
+
+    /// The outcome of `POST /ehr/{ehr_id}/composition`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum CompositionCreateOutcome {
+        /// The `201` answer.
+        Created {
+            /// The body, decoded from canonical JSON; `None` when the service sent none.
+            body: Option<serde_json::Value>,
+            /// The response headers the OAS declares for this answer.
+            headers: CompositionCreateCreatedHeaders,
+        },
+        /// The `204` answer.
+        NoContent {
+            /// The response headers the OAS declares for this answer.
+            headers: CompositionCreateNoContentHeaders,
+        },
+        /// The `400` answer.
+        BadRequest {
+            /// The body, decoded from canonical JSON; `None` when the service sent none.
+            body: Option<super::super::common::Error>,
+        },
+        /// The `404` answer.
+        NotFound,
+        /// The `422` answer.
+        UnprocessableEntity,
+    }
+
+    /// The response headers the OAS declares for the `200` answer of
+    /// `GET /ehr/{ehr_id}/composition/{uid_based_id}`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct CompositionGetOkHeaders {
+        /// The `ETag` response header.
+        pub etag: Option<String>,
+        /// The `Location` response header.
+        pub location: Option<String>,
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+        /// Every value of the `openehr-item-tag` response header, one per field line.
+        pub openehr_item_tag: Vec<String>,
+        /// Every value of the `openehr-version-item-tag` response header, one per field line.
+        pub openehr_version_item_tag: Vec<String>,
+    }
+
+    /// The outcome of `GET /ehr/{ehr_id}/composition/{uid_based_id}`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum CompositionGetOutcome {
+        /// The `200` answer.
+        Ok {
+            /// The body, decoded from canonical JSON.
+            body: openehr_rm::v1_2::composition::composition::Composition,
+            /// The response headers the OAS declares for this answer.
+            headers: CompositionGetOkHeaders,
+        },
+        /// The `204` answer.
+        NoContent,
+        /// The `404` answer.
+        NotFound,
+    }
+
+    /// The response headers the OAS declares for the `200` answer of
+    /// `PUT /ehr/{ehr_id}/composition/{uid_based_id}`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct CompositionUpdateOkHeaders {
+        /// The `ETag` response header.
+        pub etag: Option<String>,
+        /// The `Location` response header.
+        pub location: Option<String>,
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+        /// Every value of the `openehr-item-tag` response header, one per field line.
+        pub openehr_item_tag: Vec<String>,
+        /// Every value of the `openehr-version-item-tag` response header, one per field line.
+        pub openehr_version_item_tag: Vec<String>,
+    }
+
+    /// The response headers the OAS declares for the `204` answer of
+    /// `PUT /ehr/{ehr_id}/composition/{uid_based_id}`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct CompositionUpdateNoContentHeaders {
+        /// The `ETag` response header.
+        pub etag: Option<String>,
+        /// The `Location` response header.
+        pub location: Option<String>,
+        /// Every value of the `openehr-item-tag` response header, one per field line.
+        pub openehr_item_tag: Vec<String>,
+        /// Every value of the `openehr-version-item-tag` response header, one per field line.
+        pub openehr_version_item_tag: Vec<String>,
+    }
+
+    /// The response headers the OAS declares for the `412` answer of
+    /// `PUT /ehr/{ehr_id}/composition/{uid_based_id}`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct CompositionUpdatePreconditionFailedHeaders {
+        /// The `ETag` response header.
+        pub etag: Option<String>,
+        /// The `Location` response header.
+        pub location: Option<String>,
+    }
+
+    /// The outcome of `PUT /ehr/{ehr_id}/composition/{uid_based_id}`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum CompositionUpdateOutcome {
+        /// The `200` answer.
+        Ok {
+            /// The body, decoded from canonical JSON.
+            body: serde_json::Value,
+            /// The response headers the OAS declares for this answer.
+            headers: CompositionUpdateOkHeaders,
+        },
+        /// The `204` answer.
+        NoContent {
+            /// The response headers the OAS declares for this answer.
+            headers: CompositionUpdateNoContentHeaders,
+        },
+        /// The `400` answer.
+        BadRequest {
+            /// The body, decoded from canonical JSON; `None` when the service sent none.
+            body: Option<super::super::common::Error>,
+        },
+        /// The `404` answer.
+        NotFound,
+        /// The `412` answer.
+        PreconditionFailed {
+            /// The response headers the OAS declares for this answer.
+            headers: CompositionUpdatePreconditionFailedHeaders,
+        },
+        /// The `422` answer.
+        UnprocessableEntity,
+    }
+
+    /// The response headers the OAS declares for the `204` answer of
+    /// `DELETE /ehr/{ehr_id}/composition/{uid_based_id}`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct CompositionDeleteNoContentHeaders {
+        /// The `ETag` response header.
+        pub etag: Option<String>,
+        /// The `Location` response header.
+        pub location: Option<String>,
+    }
+
+    /// The response headers the OAS declares for the `409` answer of
+    /// `DELETE /ehr/{ehr_id}/composition/{uid_based_id}`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct CompositionDeleteConflictHeaders {
+        /// The `ETag` response header.
+        pub etag: Option<String>,
+        /// The `Location` response header.
+        pub location: Option<String>,
+    }
+
+    /// The outcome of `DELETE /ehr/{ehr_id}/composition/{uid_based_id}`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum CompositionDeleteOutcome {
+        /// The `204` answer.
+        NoContent {
+            /// The response headers the OAS declares for this answer.
+            headers: CompositionDeleteNoContentHeaders,
+        },
+        /// The `400` answer.
+        BadRequest,
+        /// The `404` answer.
+        NotFound,
+        /// The `409` answer.
+        Conflict {
+            /// The response headers the OAS declares for this answer.
+            headers: CompositionDeleteConflictHeaders,
+        },
+    }
+
+    /// The response headers the OAS declares for the `200` answer of
+    /// `GET /ehr/{ehr_id}/versioned_composition/{versioned_object_uid}`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct VersionedCompositionGetOkHeaders {
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+    }
+
+    /// The outcome of `GET /ehr/{ehr_id}/versioned_composition/{versioned_object_uid}`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum VersionedCompositionGetOutcome {
+        /// The `200` answer.
+        Ok {
+            /// The body, decoded from canonical JSON.
+            body: openehr_rm::v1_2::ehr::versioned_composition::VersionedComposition,
+            /// The response headers the OAS declares for this answer.
+            headers: VersionedCompositionGetOkHeaders,
+        },
+        /// The `404` answer.
+        NotFound,
+    }
+
+    /// The response headers the OAS declares for the `200` answer of
+    /// `GET /ehr/{ehr_id}/versioned_composition/{versioned_object_uid}/revision_history`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct VersionedCompositionRevisionHistoryOkHeaders {
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+    }
+
+    /// The outcome of `GET /ehr/{ehr_id}/versioned_composition/{versioned_object_uid}/revision_history`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum VersionedCompositionRevisionHistoryOutcome {
+        /// The `200` answer.
+        Ok {
+            /// The body, decoded from canonical JSON.
+            body: openehr_rm::v1_2::common::generic::revision_history::RevisionHistory,
+            /// The response headers the OAS declares for this answer.
+            headers: VersionedCompositionRevisionHistoryOkHeaders,
+        },
+        /// The `404` answer.
+        NotFound,
+    }
+
+    /// The response headers the OAS declares for the `200` answer of
+    /// `GET /ehr/{ehr_id}/versioned_composition/{versioned_object_uid}/version`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct VersionedCompositionVersionGetAtTimeOkHeaders {
+        /// The `ETag` response header.
+        pub etag: Option<String>,
+        /// The `Location` response header.
+        pub location: Option<String>,
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+    }
+
+    /// The outcome of `GET /ehr/{ehr_id}/versioned_composition/{versioned_object_uid}/version`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum VersionedCompositionVersionGetAtTimeOutcome {
+        /// The `200` answer.
+        Ok {
+            /// The body, decoded from canonical JSON.
+            body: VersionOfComposition,
+            /// The response headers the OAS declares for this answer.
+            headers: VersionedCompositionVersionGetAtTimeOkHeaders,
+        },
+        /// The `404` answer.
+        NotFound,
+    }
+
+    /// The response headers the OAS declares for the `200` answer of
+    /// `GET /ehr/{ehr_id}/versioned_composition/{versioned_object_uid}/version/{version_uid}`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct VersionedCompositionVersionGetByIdOkHeaders {
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+    }
+
+    /// The outcome of `GET /ehr/{ehr_id}/versioned_composition/{versioned_object_uid}/version/{version_uid}`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum VersionedCompositionVersionGetByIdOutcome {
+        /// The `200` answer.
+        Ok {
+            /// The body, decoded from canonical JSON.
+            body: VersionOfComposition,
+            /// The response headers the OAS declares for this answer.
+            headers: VersionedCompositionVersionGetByIdOkHeaders,
+        },
+        /// The `404` answer.
+        NotFound,
+    }
+
+    /// The response headers the OAS declares for the `200` answer of
+    /// `GET /ehr/{ehr_id}/directory`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct DirectoryGetAtTimeOkHeaders {
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+    }
+
+    /// The outcome of `GET /ehr/{ehr_id}/directory`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum DirectoryGetAtTimeOutcome {
+        /// The `200` answer.
+        Ok {
+            /// The body, decoded from canonical JSON.
+            body: openehr_rm::v1_2::common::directory::folder::Folder,
+            /// The response headers the OAS declares for this answer.
+            headers: DirectoryGetAtTimeOkHeaders,
+        },
+        /// The `204` answer.
+        NoContent,
+        /// The `404` answer.
+        NotFound,
+    }
+
+    /// The response headers the OAS declares for the `200` answer of
+    /// `PUT /ehr/{ehr_id}/directory`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct DirectoryUpdateOkHeaders {
+        /// The `ETag` response header.
+        pub etag: Option<String>,
+        /// The `Location` response header.
+        pub location: Option<String>,
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+    }
+
+    /// The response headers the OAS declares for the `204` answer of
+    /// `PUT /ehr/{ehr_id}/directory`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct DirectoryUpdateNoContentHeaders {
+        /// The `ETag` response header.
+        pub etag: Option<String>,
+        /// The `Location` response header.
+        pub location: Option<String>,
+        /// Every value of the `openehr-item-tag` response header, one per field line.
+        pub openehr_item_tag: Vec<String>,
+        /// Every value of the `openehr-version-item-tag` response header, one per field line.
+        pub openehr_version_item_tag: Vec<String>,
+    }
+
+    /// The response headers the OAS declares for the `412` answer of
+    /// `PUT /ehr/{ehr_id}/directory`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct DirectoryUpdatePreconditionFailedHeaders {
+        /// The `ETag` response header.
+        pub etag: Option<String>,
+        /// The `Location` response header.
+        pub location: Option<String>,
+    }
+
+    /// The outcome of `PUT /ehr/{ehr_id}/directory`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum DirectoryUpdateOutcome {
+        /// The `200` answer.
+        Ok {
+            /// The body, decoded from canonical JSON.
+            body: serde_json::Value,
+            /// The response headers the OAS declares for this answer.
+            headers: DirectoryUpdateOkHeaders,
+        },
+        /// The `204` answer.
+        NoContent {
+            /// The response headers the OAS declares for this answer.
+            headers: DirectoryUpdateNoContentHeaders,
+        },
+        /// The `400` answer.
+        BadRequest {
+            /// The body, decoded from canonical JSON; `None` when the service sent none.
+            body: Option<super::super::common::Error>,
+        },
+        /// The `404` answer.
+        NotFound,
+        /// The `412` answer.
+        PreconditionFailed {
+            /// The response headers the OAS declares for this answer.
+            headers: DirectoryUpdatePreconditionFailedHeaders,
+        },
+    }
+
+    /// The response headers the OAS declares for the `201` answer of
+    /// `POST /ehr/{ehr_id}/directory`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct DirectoryCreateCreatedHeaders {
+        /// The `ETag` response header.
+        pub etag: Option<String>,
+        /// The `Location` response header.
+        pub location: Option<String>,
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+    }
+
+    /// The response headers the OAS declares for the `204` answer of
+    /// `POST /ehr/{ehr_id}/directory`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct DirectoryCreateNoContentHeaders {
+        /// The `ETag` response header.
+        pub etag: Option<String>,
+        /// The `Location` response header.
+        pub location: Option<String>,
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+    }
+
+    /// The outcome of `POST /ehr/{ehr_id}/directory`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum DirectoryCreateOutcome {
+        /// The `201` answer.
+        Created {
+            /// The body, decoded from canonical JSON; `None` when the service sent none.
+            body: Option<serde_json::Value>,
+            /// The response headers the OAS declares for this answer.
+            headers: DirectoryCreateCreatedHeaders,
+        },
+        /// The `204` answer.
+        NoContent {
+            /// The response headers the OAS declares for this answer.
+            headers: DirectoryCreateNoContentHeaders,
+        },
+        /// The `400` answer.
+        BadRequest {
+            /// The body, decoded from canonical JSON; `None` when the service sent none.
+            body: Option<super::super::common::Error>,
+        },
+        /// The `404` answer.
+        NotFound,
+    }
+
+    /// The response headers the OAS declares for the `412` answer of
+    /// `DELETE /ehr/{ehr_id}/directory`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct DirectoryDeletePreconditionFailedHeaders {
+        /// The `ETag` response header.
+        pub etag: Option<String>,
+        /// The `Location` response header.
+        pub location: Option<String>,
+    }
+
+    /// The outcome of `DELETE /ehr/{ehr_id}/directory`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum DirectoryDeleteOutcome {
+        /// The `204` answer.
+        NoContent,
+        /// The `400` answer.
+        BadRequest {
+            /// The body, decoded from canonical JSON; `None` when the service sent none.
+            body: Option<super::super::common::Error>,
+        },
+        /// The `404` answer.
+        NotFound,
+        /// The `412` answer.
+        PreconditionFailed {
+            /// The response headers the OAS declares for this answer.
+            headers: DirectoryDeletePreconditionFailedHeaders,
+        },
+    }
+
+    /// The response headers the OAS declares for the `200` answer of
+    /// `GET /ehr/{ehr_id}/directory/{version_uid}`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct DirectoryGetByVersionIdOkHeaders {
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+    }
+
+    /// The outcome of `GET /ehr/{ehr_id}/directory/{version_uid}`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum DirectoryGetByVersionIdOutcome {
+        /// The `200` answer.
+        Ok {
+            /// The body, decoded from canonical JSON.
+            body: openehr_rm::v1_2::common::directory::folder::Folder,
+            /// The response headers the OAS declares for this answer.
+            headers: DirectoryGetByVersionIdOkHeaders,
+        },
+        /// The `404` answer.
+        NotFound,
+    }
+
+    /// The response headers the OAS declares for the `201` answer of
+    /// `POST /ehr/{ehr_id}/contribution`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct ContributionCreateCreatedHeaders {
+        /// The `ETag` response header.
+        pub etag: Option<String>,
+        /// The `Location` response header.
+        pub location: Option<String>,
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+    }
+
+    /// The response headers the OAS declares for the `204` answer of
+    /// `POST /ehr/{ehr_id}/contribution`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct ContributionCreateNoContentHeaders {
+        /// The `ETag` response header.
+        pub etag: Option<String>,
+        /// The `Location` response header.
+        pub location: Option<String>,
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+    }
+
+    /// The outcome of `POST /ehr/{ehr_id}/contribution`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum ContributionCreateOutcome {
+        /// The `201` answer.
+        Created {
+            /// The body, decoded from canonical JSON; `None` when the service sent none.
+            body: Option<serde_json::Value>,
+            /// The response headers the OAS declares for this answer.
+            headers: ContributionCreateCreatedHeaders,
+        },
+        /// The `204` answer.
+        NoContent {
+            /// The response headers the OAS declares for this answer.
+            headers: ContributionCreateNoContentHeaders,
+        },
+        /// The `400` answer.
+        BadRequest {
+            /// The body, decoded from canonical JSON; `None` when the service sent none.
+            body: Option<super::super::common::Error>,
+        },
+        /// The `404` answer.
+        NotFound,
+        /// The `409` answer.
+        Conflict,
+    }
+
+    /// The response headers the OAS declares for the `200` answer of
+    /// `GET /ehr/{ehr_id}/contribution/{contribution_uid}`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct ContributionGetOkHeaders {
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+    }
+
+    /// The outcome of `GET /ehr/{ehr_id}/contribution/{contribution_uid}`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum ContributionGetOutcome {
+        /// The `200` answer.
+        Ok {
+            /// The body, decoded from canonical JSON.
+            body: openehr_rm::v1_2::common::change_control::contribution::Contribution,
+            /// The response headers the OAS declares for this answer.
+            headers: ContributionGetOkHeaders,
+        },
+        /// The `404` answer.
+        NotFound,
+    }
+
+    /// The response headers the OAS declares for the `200` answer of
+    /// `GET /ehr/{ehr_id}/tags`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct EhrTagsGetOkHeaders {
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+    }
+
+    /// The outcome of `GET /ehr/{ehr_id}/tags`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum EhrTagsGetOutcome {
+        /// The `200` answer.
+        Ok {
+            /// The body, decoded from canonical JSON.
+            body: Vec<ItemTagOfComposition>,
+            /// The response headers the OAS declares for this answer.
+            headers: EhrTagsGetOkHeaders,
+        },
+        /// The `400` answer.
+        BadRequest {
+            /// The body, decoded from canonical JSON; `None` when the service sent none.
+            body: Option<super::super::common::Error>,
+        },
+        /// The `404` answer.
+        NotFound,
+    }
+
+    /// The response headers the OAS declares for the `200` answer of
+    /// `GET /ehr/{ehr_id}/composition/{uid_based_id}/tags`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct CompositionTagsGetOkHeaders {
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+    }
+
+    /// The outcome of `GET /ehr/{ehr_id}/composition/{uid_based_id}/tags`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum CompositionTagsGetOutcome {
+        /// The `200` answer.
+        Ok {
+            /// The body, decoded from canonical JSON.
+            body: Vec<ItemTagOfComposition>,
+            /// The response headers the OAS declares for this answer.
+            headers: CompositionTagsGetOkHeaders,
+        },
+        /// The `404` answer.
+        NotFound,
+    }
+
+    /// The response headers the OAS declares for the `200` answer of
+    /// `PUT /ehr/{ehr_id}/composition/{uid_based_id}/tags`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct CompositionTagsUpdateOkHeaders {
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+    }
+
+    /// The outcome of `PUT /ehr/{ehr_id}/composition/{uid_based_id}/tags`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum CompositionTagsUpdateOutcome {
+        /// The `200` answer.
+        Ok {
+            /// The body, decoded from canonical JSON.
+            body: Vec<ItemTagOfComposition>,
+            /// The response headers the OAS declares for this answer.
+            headers: CompositionTagsUpdateOkHeaders,
+        },
+        /// The `204` answer.
+        NoContent,
+        /// The `400` answer.
+        BadRequest {
+            /// The body, decoded from canonical JSON; `None` when the service sent none.
+            body: Option<super::super::common::Error>,
+        },
+        /// The `404` answer.
+        NotFound,
+    }
+
+    /// The outcome of `DELETE /ehr/{ehr_id}/composition/{uid_based_id}/tags/{key}`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum CompositionTagsDeleteOutcome {
+        /// The `204` answer.
+        NoContent,
+        /// The `404` answer.
+        NotFound,
+    }
+
+    /// The response headers the OAS declares for the `200` answer of
+    /// `GET /ehr/{ehr_id}/ehr_status/{uid_based_id}/tags`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct EhrStatusTagsGetOkHeaders {
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+    }
+
+    /// The outcome of `GET /ehr/{ehr_id}/ehr_status/{uid_based_id}/tags`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum EhrStatusTagsGetOutcome {
+        /// The `200` answer.
+        Ok {
+            /// The body, decoded from canonical JSON.
+            body: Vec<ItemTagOfEhrStatus>,
+            /// The response headers the OAS declares for this answer.
+            headers: EhrStatusTagsGetOkHeaders,
+        },
+        /// The `404` answer.
+        NotFound,
+    }
+
+    /// The response headers the OAS declares for the `200` answer of
+    /// `PUT /ehr/{ehr_id}/ehr_status/{uid_based_id}/tags`, each as received (absent when the service did not send it).
+    #[derive(Debug, Clone)]
+    pub struct EhrStatusTagsUpdateOkHeaders {
+        /// The `Content-Type` response header.
+        pub content_type: Option<String>,
+    }
+
+    /// The outcome of `PUT /ehr/{ehr_id}/ehr_status/{uid_based_id}/tags`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum EhrStatusTagsUpdateOutcome {
+        /// The `200` answer.
+        Ok {
+            /// The body, decoded from canonical JSON.
+            body: Vec<ItemTagOfEhrStatus>,
+            /// The response headers the OAS declares for this answer.
+            headers: EhrStatusTagsUpdateOkHeaders,
+        },
+        /// The `204` answer.
+        NoContent,
+        /// The `400` answer.
+        BadRequest {
+            /// The body, decoded from canonical JSON; `None` when the service sent none.
+            body: Option<super::super::common::Error>,
+        },
+        /// The `404` answer.
+        NotFound,
+    }
+
+    /// The outcome of `DELETE /ehr/{ehr_id}/ehr_status/{uid_based_id}/tags/{key}`: one variant per status the OAS documents.
+    /// A status outside this set is a [`crate::rest::client::ClientError`].
+    #[derive(Debug, Clone)]
+    pub enum EhrStatusTagsDeleteOutcome {
+        /// The `204` answer.
+        NoContent,
+        /// The `404` answer.
+        NotFound,
+    }
+
+    /// The `ehr` API group over one configured CDR.
+    #[derive(Debug, Clone, Copy)]
+    pub struct EhrClient<'c, T> {
+        client: &'c crate::rest::client::Client<T>,
+    }
+
+    impl<'c, T: crate::rest::client::Transport> EhrClient<'c, T> {
+        /// The `ehr` API group over `client`.
+        #[must_use]
+        pub fn new(client: &'c crate::rest::client::Client<T>) -> Self {
+            Self { client }
+        }
+
+        /// `GET /ehr`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn ehr_get_by_subject(
+            &self,
+            params: &EhrGetBySubjectParams,
+        ) -> Result<EhrGetBySubjectOutcome, crate::rest::client::ClientError> {
+            let mut request =
+                crate::rest::client::Request::new(http::Method::GET, String::from("/ehr"));
+            {
+                let value = &params.subject_id;
+                request.query("subject_id", value);
+            }
+            {
+                let value = &params.subject_namespace;
+                request.query("subject_namespace", value);
+            }
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::OK => Ok(EhrGetBySubjectOutcome::Ok {
+                    body: answer.json()?,
+                    headers: EhrGetBySubjectOkHeaders {
+                        content_type: answer.header("Content-Type"),
+                    },
+                }),
+                http::StatusCode::NOT_FOUND => Ok(EhrGetBySubjectOutcome::NotFound),
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `POST /ehr`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn ehr_create(
+            &self,
+            params: &EhrCreateParams,
+            body: Option<&openehr_rm::v1_2::ehr::ehr_status::EhrStatus>,
+        ) -> Result<EhrCreateOutcome, crate::rest::client::ClientError> {
+            let mut request =
+                crate::rest::client::Request::new(http::Method::POST, String::from("/ehr"));
+            if let Some(value) = params.prefer.as_ref() {
+                request.header("Prefer", &value.to_string())?;
+            }
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            if let Some(value) = params.content_type.as_ref() {
+                request.header("Content-Type", &value.to_string())?;
+            }
+            if let Some(body) = body {
+                request.json_body(body, params.content_type.as_deref())?;
+            }
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::CREATED => Ok(EhrCreateOutcome::Created {
+                    body: answer.optional_json()?,
+                    headers: EhrCreateCreatedHeaders {
+                        etag: answer.header("ETag"),
+                        location: answer.header("Location"),
+                    },
+                }),
+                http::StatusCode::NO_CONTENT => Ok(EhrCreateOutcome::NoContent {
+                    headers: EhrCreateNoContentHeaders {
+                        etag: answer.header("ETag"),
+                        location: answer.header("Location"),
+                    },
+                }),
+                http::StatusCode::BAD_REQUEST => Ok(EhrCreateOutcome::BadRequest {
+                    body: answer.optional_json()?,
+                }),
+                http::StatusCode::CONFLICT => Ok(EhrCreateOutcome::Conflict),
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `GET /ehr/{ehr_id}`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn ehr_get_by_id(
+            &self,
+            params: &EhrGetByIdParams,
+        ) -> Result<EhrGetByIdOutcome, crate::rest::client::ClientError> {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::GET,
+                format!("/ehr/{}", crate::rest::client::path_segment(&params.ehr_id)),
+            );
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::OK => Ok(EhrGetByIdOutcome::Ok {
+                    body: answer.json()?,
+                    headers: EhrGetByIdOkHeaders {
+                        content_type: answer.header("Content-Type"),
+                    },
+                }),
+                http::StatusCode::NOT_FOUND => Ok(EhrGetByIdOutcome::NotFound),
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `PUT /ehr/{ehr_id}`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn ehr_create_with_id(
+            &self,
+            params: &EhrCreateWithIdParams,
+            body: Option<&openehr_rm::v1_2::ehr::ehr_status::EhrStatus>,
+        ) -> Result<EhrCreateWithIdOutcome, crate::rest::client::ClientError> {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::PUT,
+                format!("/ehr/{}", crate::rest::client::path_segment(&params.ehr_id)),
+            );
+            if let Some(value) = params.prefer.as_ref() {
+                request.header("Prefer", &value.to_string())?;
+            }
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            if let Some(value) = params.content_type.as_ref() {
+                request.header("Content-Type", &value.to_string())?;
+            }
+            if let Some(body) = body {
+                request.json_body(body, params.content_type.as_deref())?;
+            }
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::CREATED => Ok(EhrCreateWithIdOutcome::Created {
+                    body: answer.optional_json()?,
+                    headers: EhrCreateWithIdCreatedHeaders {
+                        etag: answer.header("ETag"),
+                        location: answer.header("Location"),
+                    },
+                }),
+                http::StatusCode::NO_CONTENT => Ok(EhrCreateWithIdOutcome::NoContent {
+                    headers: EhrCreateWithIdNoContentHeaders {
+                        etag: answer.header("ETag"),
+                        location: answer.header("Location"),
+                    },
+                }),
+                http::StatusCode::BAD_REQUEST => Ok(EhrCreateWithIdOutcome::BadRequest {
+                    body: answer.optional_json()?,
+                }),
+                http::StatusCode::CONFLICT => Ok(EhrCreateWithIdOutcome::Conflict),
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `GET /ehr/{ehr_id}/ehr_status/{version_uid}`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn ehr_status_get_by_version_id(
+            &self,
+            params: &EhrStatusGetByVersionIdParams,
+        ) -> Result<EhrStatusGetByVersionIdOutcome, crate::rest::client::ClientError> {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::GET,
+                format!(
+                    "/ehr/{}/ehr_status/{}",
+                    crate::rest::client::path_segment(&params.ehr_id),
+                    crate::rest::client::path_segment(&params.version_uid)
+                ),
+            );
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::OK => Ok(EhrStatusGetByVersionIdOutcome::Ok {
+                    body: answer.json()?,
+                    headers: EhrStatusGetByVersionIdOkHeaders {
+                        etag: answer.header("ETag"),
+                        location: answer.header("Location"),
+                        content_type: answer.header("Content-Type"),
+                        openehr_item_tag: answer.header_all("openehr-item-tag"),
+                        openehr_version_item_tag: answer.header_all("openehr-version-item-tag"),
+                    },
+                }),
+                http::StatusCode::NOT_FOUND => Ok(EhrStatusGetByVersionIdOutcome::NotFound),
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `GET /ehr/{ehr_id}/ehr_status`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn ehr_status_get_at_time(
+            &self,
+            params: &EhrStatusGetAtTimeParams,
+        ) -> Result<EhrStatusGetAtTimeOutcome, crate::rest::client::ClientError> {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::GET,
+                format!(
+                    "/ehr/{}/ehr_status",
+                    crate::rest::client::path_segment(&params.ehr_id)
+                ),
+            );
+            if let Some(value) = params.version_at_time.as_ref() {
+                request.query("version_at_time", value);
+            }
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::OK => Ok(EhrStatusGetAtTimeOutcome::Ok {
+                    body: answer.json()?,
+                    headers: EhrStatusGetAtTimeOkHeaders {
+                        etag: answer.header("ETag"),
+                        location: answer.header("Location"),
+                        content_type: answer.header("Content-Type"),
+                        openehr_item_tag: answer.header_all("openehr-item-tag"),
+                        openehr_version_item_tag: answer.header_all("openehr-version-item-tag"),
+                    },
+                }),
+                http::StatusCode::BAD_REQUEST => Ok(EhrStatusGetAtTimeOutcome::BadRequest {
+                    body: answer.optional_json()?,
+                }),
+                http::StatusCode::NOT_FOUND => Ok(EhrStatusGetAtTimeOutcome::NotFound),
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `PUT /ehr/{ehr_id}/ehr_status`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn ehr_status_update(
+            &self,
+            params: &EhrStatusUpdateParams,
+            body: &openehr_rm::v1_2::ehr::ehr_status::EhrStatus,
+        ) -> Result<EhrStatusUpdateOutcome, crate::rest::client::ClientError> {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::PUT,
+                format!(
+                    "/ehr/{}/ehr_status",
+                    crate::rest::client::path_segment(&params.ehr_id)
+                ),
+            );
+            {
+                let value = &params.if_match;
+                request.header("If-Match", &value.to_string())?;
+            }
+            if let Some(value) = params.prefer.as_ref() {
+                request.header("Prefer", &value.to_string())?;
+            }
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            if let Some(value) = params.content_type.as_ref() {
+                request.header("Content-Type", &value.to_string())?;
+            }
+            if let Some(value) = params.openehr_item_tag.as_ref() {
+                for item in value {
+                    request.header("openehr-item-tag", &item.to_string())?;
+                }
+            }
+            if let Some(value) = params.openehr_version_item_tag.as_ref() {
+                for item in value {
+                    request.header("openehr-version-item-tag", &item.to_string())?;
+                }
+            }
+            request.json_body(body, params.content_type.as_deref())?;
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::OK => Ok(EhrStatusUpdateOutcome::Ok {
+                    body: answer.json()?,
+                    headers: EhrStatusUpdateOkHeaders {
+                        etag: answer.header("ETag"),
+                        location: answer.header("Location"),
+                        content_type: answer.header("Content-Type"),
+                        openehr_item_tag: answer.header_all("openehr-item-tag"),
+                        openehr_version_item_tag: answer.header_all("openehr-version-item-tag"),
+                    },
+                }),
+                http::StatusCode::NO_CONTENT => Ok(EhrStatusUpdateOutcome::NoContent {
+                    headers: EhrStatusUpdateNoContentHeaders {
+                        etag: answer.header("ETag"),
+                        location: answer.header("Location"),
+                        openehr_item_tag: answer.header_all("openehr-item-tag"),
+                        openehr_version_item_tag: answer.header_all("openehr-version-item-tag"),
+                    },
+                }),
+                http::StatusCode::BAD_REQUEST => Ok(EhrStatusUpdateOutcome::BadRequest {
+                    body: answer.optional_json()?,
+                }),
+                http::StatusCode::NOT_FOUND => Ok(EhrStatusUpdateOutcome::NotFound),
+                http::StatusCode::PRECONDITION_FAILED => {
+                    Ok(EhrStatusUpdateOutcome::PreconditionFailed {
+                        headers: EhrStatusUpdatePreconditionFailedHeaders {
+                            etag: answer.header("ETag"),
+                            location: answer.header("Location"),
+                        },
+                    })
+                }
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `GET /ehr/{ehr_id}/versioned_ehr_status`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn versioned_ehr_status_get(
+            &self,
+            params: &VersionedEhrStatusGetParams,
+        ) -> Result<VersionedEhrStatusGetOutcome, crate::rest::client::ClientError> {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::GET,
+                format!(
+                    "/ehr/{}/versioned_ehr_status",
+                    crate::rest::client::path_segment(&params.ehr_id)
+                ),
+            );
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            if let Some(value) = params.content_type.as_ref() {
+                request.header("Content-Type", &value.to_string())?;
+            }
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::OK => Ok(VersionedEhrStatusGetOutcome::Ok {
+                    body: answer.json()?,
+                    headers: VersionedEhrStatusGetOkHeaders {
+                        content_type: answer.header("Content-Type"),
+                    },
+                }),
+                http::StatusCode::NOT_FOUND => Ok(VersionedEhrStatusGetOutcome::NotFound),
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `GET /ehr/{ehr_id}/versioned_ehr_status/revision_history`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn versioned_ehr_status_revision_history(
+            &self,
+            params: &VersionedEhrStatusRevisionHistoryParams,
+        ) -> Result<VersionedEhrStatusRevisionHistoryOutcome, crate::rest::client::ClientError>
+        {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::GET,
+                format!(
+                    "/ehr/{}/versioned_ehr_status/revision_history",
+                    crate::rest::client::path_segment(&params.ehr_id)
+                ),
+            );
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            if let Some(value) = params.content_type.as_ref() {
+                request.header("Content-Type", &value.to_string())?;
+            }
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::OK => Ok(VersionedEhrStatusRevisionHistoryOutcome::Ok {
+                    body: answer.json()?,
+                    headers: VersionedEhrStatusRevisionHistoryOkHeaders {
+                        content_type: answer.header("Content-Type"),
+                    },
+                }),
+                http::StatusCode::NOT_FOUND => {
+                    Ok(VersionedEhrStatusRevisionHistoryOutcome::NotFound)
+                }
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `GET /ehr/{ehr_id}/versioned_ehr_status/version`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn versioned_ehr_status_version_get_at_time(
+            &self,
+            params: &VersionedEhrStatusVersionGetAtTimeParams,
+        ) -> Result<VersionedEhrStatusVersionGetAtTimeOutcome, crate::rest::client::ClientError>
+        {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::GET,
+                format!(
+                    "/ehr/{}/versioned_ehr_status/version",
+                    crate::rest::client::path_segment(&params.ehr_id)
+                ),
+            );
+            if let Some(value) = params.version_at_time.as_ref() {
+                request.query("version_at_time", value);
+            }
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            if let Some(value) = params.content_type.as_ref() {
+                request.header("Content-Type", &value.to_string())?;
+            }
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::OK => Ok(VersionedEhrStatusVersionGetAtTimeOutcome::Ok {
+                    body: answer.json()?,
+                    headers: VersionedEhrStatusVersionGetAtTimeOkHeaders {
+                        etag: answer.header("ETag"),
+                        location: answer.header("Location"),
+                        content_type: answer.header("Content-Type"),
+                    },
+                }),
+                http::StatusCode::BAD_REQUEST => {
+                    Ok(VersionedEhrStatusVersionGetAtTimeOutcome::BadRequest {
+                        body: answer.optional_json()?,
+                    })
+                }
+                http::StatusCode::NOT_FOUND => {
+                    Ok(VersionedEhrStatusVersionGetAtTimeOutcome::NotFound)
+                }
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `GET /ehr/{ehr_id}/versioned_ehr_status/version/{version_uid}`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn versioned_ehr_status_version_get_by_id(
+            &self,
+            params: &VersionedEhrStatusVersionGetByIdParams,
+        ) -> Result<VersionedEhrStatusVersionGetByIdOutcome, crate::rest::client::ClientError>
+        {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::GET,
+                format!(
+                    "/ehr/{}/versioned_ehr_status/version/{}",
+                    crate::rest::client::path_segment(&params.ehr_id),
+                    crate::rest::client::path_segment(&params.version_uid)
+                ),
+            );
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            if let Some(value) = params.content_type.as_ref() {
+                request.header("Content-Type", &value.to_string())?;
+            }
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::OK => Ok(VersionedEhrStatusVersionGetByIdOutcome::Ok {
+                    body: answer.json()?,
+                    headers: VersionedEhrStatusVersionGetByIdOkHeaders {
+                        content_type: answer.header("Content-Type"),
+                    },
+                }),
+                http::StatusCode::NOT_FOUND => {
+                    Ok(VersionedEhrStatusVersionGetByIdOutcome::NotFound)
+                }
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `POST /ehr/{ehr_id}/composition`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn composition_create(
+            &self,
+            params: &CompositionCreateParams,
+            body: &openehr_rm::v1_2::composition::composition::Composition,
+        ) -> Result<CompositionCreateOutcome, crate::rest::client::ClientError> {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::POST,
+                format!(
+                    "/ehr/{}/composition",
+                    crate::rest::client::path_segment(&params.ehr_id)
+                ),
+            );
+            if let Some(value) = params.prefer.as_ref() {
+                request.header("Prefer", &value.to_string())?;
+            }
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            if let Some(value) = params.content_type.as_ref() {
+                request.header("Content-Type", &value.to_string())?;
+            }
+            if let Some(value) = params.openehr_item_tag.as_ref() {
+                for item in value {
+                    request.header("openehr-item-tag", &item.to_string())?;
+                }
+            }
+            if let Some(value) = params.openehr_version_item_tag.as_ref() {
+                for item in value {
+                    request.header("openehr-version-item-tag", &item.to_string())?;
+                }
+            }
+            request.json_body(body, params.content_type.as_deref())?;
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::CREATED => Ok(CompositionCreateOutcome::Created {
+                    body: answer.optional_json()?,
+                    headers: CompositionCreateCreatedHeaders {
+                        etag: answer.header("ETag"),
+                        location: answer.header("Location"),
+                        content_type: answer.header("Content-Type"),
+                        openehr_item_tag: answer.header_all("openehr-item-tag"),
+                        openehr_version_item_tag: answer.header_all("openehr-version-item-tag"),
+                    },
+                }),
+                http::StatusCode::NO_CONTENT => Ok(CompositionCreateOutcome::NoContent {
+                    headers: CompositionCreateNoContentHeaders {
+                        etag: answer.header("ETag"),
+                        location: answer.header("Location"),
+                        content_type: answer.header("Content-Type"),
+                        openehr_item_tag: answer.header_all("openehr-item-tag"),
+                        openehr_version_item_tag: answer.header_all("openehr-version-item-tag"),
+                    },
+                }),
+                http::StatusCode::BAD_REQUEST => Ok(CompositionCreateOutcome::BadRequest {
+                    body: answer.optional_json()?,
+                }),
+                http::StatusCode::NOT_FOUND => Ok(CompositionCreateOutcome::NotFound),
+                http::StatusCode::UNPROCESSABLE_ENTITY => {
+                    Ok(CompositionCreateOutcome::UnprocessableEntity)
+                }
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `GET /ehr/{ehr_id}/composition/{uid_based_id}`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn composition_get(
+            &self,
+            params: &CompositionGetParams,
+        ) -> Result<CompositionGetOutcome, crate::rest::client::ClientError> {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::GET,
+                format!(
+                    "/ehr/{}/composition/{}",
+                    crate::rest::client::path_segment(&params.ehr_id),
+                    crate::rest::client::path_segment(&params.uid_based_id)
+                ),
+            );
+            if let Some(value) = params.version_at_time.as_ref() {
+                request.query("version_at_time", value);
+            }
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::OK => Ok(CompositionGetOutcome::Ok {
+                    body: answer.json()?,
+                    headers: CompositionGetOkHeaders {
+                        etag: answer.header("ETag"),
+                        location: answer.header("Location"),
+                        content_type: answer.header("Content-Type"),
+                        openehr_item_tag: answer.header_all("openehr-item-tag"),
+                        openehr_version_item_tag: answer.header_all("openehr-version-item-tag"),
+                    },
+                }),
+                http::StatusCode::NO_CONTENT => Ok(CompositionGetOutcome::NoContent),
+                http::StatusCode::NOT_FOUND => Ok(CompositionGetOutcome::NotFound),
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `PUT /ehr/{ehr_id}/composition/{uid_based_id}`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn composition_update(
+            &self,
+            params: &CompositionUpdateParams,
+            body: &openehr_rm::v1_2::composition::composition::Composition,
+        ) -> Result<CompositionUpdateOutcome, crate::rest::client::ClientError> {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::PUT,
+                format!(
+                    "/ehr/{}/composition/{}",
+                    crate::rest::client::path_segment(&params.ehr_id),
+                    crate::rest::client::path_segment(&params.uid_based_id)
+                ),
+            );
+            {
+                let value = &params.if_match;
+                request.header("If-Match", &value.to_string())?;
+            }
+            if let Some(value) = params.prefer.as_ref() {
+                request.header("Prefer", &value.to_string())?;
+            }
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            if let Some(value) = params.content_type.as_ref() {
+                request.header("Content-Type", &value.to_string())?;
+            }
+            if let Some(value) = params.openehr_item_tag.as_ref() {
+                for item in value {
+                    request.header("openehr-item-tag", &item.to_string())?;
+                }
+            }
+            if let Some(value) = params.openehr_version_item_tag.as_ref() {
+                for item in value {
+                    request.header("openehr-version-item-tag", &item.to_string())?;
+                }
+            }
+            request.json_body(body, params.content_type.as_deref())?;
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::OK => Ok(CompositionUpdateOutcome::Ok {
+                    body: answer.json()?,
+                    headers: CompositionUpdateOkHeaders {
+                        etag: answer.header("ETag"),
+                        location: answer.header("Location"),
+                        content_type: answer.header("Content-Type"),
+                        openehr_item_tag: answer.header_all("openehr-item-tag"),
+                        openehr_version_item_tag: answer.header_all("openehr-version-item-tag"),
+                    },
+                }),
+                http::StatusCode::NO_CONTENT => Ok(CompositionUpdateOutcome::NoContent {
+                    headers: CompositionUpdateNoContentHeaders {
+                        etag: answer.header("ETag"),
+                        location: answer.header("Location"),
+                        openehr_item_tag: answer.header_all("openehr-item-tag"),
+                        openehr_version_item_tag: answer.header_all("openehr-version-item-tag"),
+                    },
+                }),
+                http::StatusCode::BAD_REQUEST => Ok(CompositionUpdateOutcome::BadRequest {
+                    body: answer.optional_json()?,
+                }),
+                http::StatusCode::NOT_FOUND => Ok(CompositionUpdateOutcome::NotFound),
+                http::StatusCode::PRECONDITION_FAILED => {
+                    Ok(CompositionUpdateOutcome::PreconditionFailed {
+                        headers: CompositionUpdatePreconditionFailedHeaders {
+                            etag: answer.header("ETag"),
+                            location: answer.header("Location"),
+                        },
+                    })
+                }
+                http::StatusCode::UNPROCESSABLE_ENTITY => {
+                    Ok(CompositionUpdateOutcome::UnprocessableEntity)
+                }
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `DELETE /ehr/{ehr_id}/composition/{uid_based_id}`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn composition_delete(
+            &self,
+            params: &CompositionDeleteParams,
+        ) -> Result<CompositionDeleteOutcome, crate::rest::client::ClientError> {
+            let request = crate::rest::client::Request::new(
+                http::Method::DELETE,
+                format!(
+                    "/ehr/{}/composition/{}",
+                    crate::rest::client::path_segment(&params.ehr_id),
+                    crate::rest::client::path_segment(&params.uid_based_id)
+                ),
+            );
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::NO_CONTENT => Ok(CompositionDeleteOutcome::NoContent {
+                    headers: CompositionDeleteNoContentHeaders {
+                        etag: answer.header("ETag"),
+                        location: answer.header("Location"),
+                    },
+                }),
+                http::StatusCode::BAD_REQUEST => Ok(CompositionDeleteOutcome::BadRequest),
+                http::StatusCode::NOT_FOUND => Ok(CompositionDeleteOutcome::NotFound),
+                http::StatusCode::CONFLICT => Ok(CompositionDeleteOutcome::Conflict {
+                    headers: CompositionDeleteConflictHeaders {
+                        etag: answer.header("ETag"),
+                        location: answer.header("Location"),
+                    },
+                }),
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `GET /ehr/{ehr_id}/versioned_composition/{versioned_object_uid}`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn versioned_composition_get(
+            &self,
+            params: &VersionedCompositionGetParams,
+        ) -> Result<VersionedCompositionGetOutcome, crate::rest::client::ClientError> {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::GET,
+                format!(
+                    "/ehr/{}/versioned_composition/{}",
+                    crate::rest::client::path_segment(&params.ehr_id),
+                    crate::rest::client::path_segment(&params.versioned_object_uid)
+                ),
+            );
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            if let Some(value) = params.content_type.as_ref() {
+                request.header("Content-Type", &value.to_string())?;
+            }
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::OK => Ok(VersionedCompositionGetOutcome::Ok {
+                    body: answer.json()?,
+                    headers: VersionedCompositionGetOkHeaders {
+                        content_type: answer.header("Content-Type"),
+                    },
+                }),
+                http::StatusCode::NOT_FOUND => Ok(VersionedCompositionGetOutcome::NotFound),
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `GET /ehr/{ehr_id}/versioned_composition/{versioned_object_uid}/revision_history`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn versioned_composition_revision_history(
+            &self,
+            params: &VersionedCompositionRevisionHistoryParams,
+        ) -> Result<VersionedCompositionRevisionHistoryOutcome, crate::rest::client::ClientError>
+        {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::GET,
+                format!(
+                    "/ehr/{}/versioned_composition/{}/revision_history",
+                    crate::rest::client::path_segment(&params.ehr_id),
+                    crate::rest::client::path_segment(&params.versioned_object_uid)
+                ),
+            );
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            if let Some(value) = params.content_type.as_ref() {
+                request.header("Content-Type", &value.to_string())?;
+            }
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::OK => Ok(VersionedCompositionRevisionHistoryOutcome::Ok {
+                    body: answer.json()?,
+                    headers: VersionedCompositionRevisionHistoryOkHeaders {
+                        content_type: answer.header("Content-Type"),
+                    },
+                }),
+                http::StatusCode::NOT_FOUND => {
+                    Ok(VersionedCompositionRevisionHistoryOutcome::NotFound)
+                }
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `GET /ehr/{ehr_id}/versioned_composition/{versioned_object_uid}/version`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn versioned_composition_version_get_at_time(
+            &self,
+            params: &VersionedCompositionVersionGetAtTimeParams,
+        ) -> Result<VersionedCompositionVersionGetAtTimeOutcome, crate::rest::client::ClientError>
+        {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::GET,
+                format!(
+                    "/ehr/{}/versioned_composition/{}/version",
+                    crate::rest::client::path_segment(&params.ehr_id),
+                    crate::rest::client::path_segment(&params.versioned_object_uid)
+                ),
+            );
+            if let Some(value) = params.version_at_time.as_ref() {
+                request.query("version_at_time", value);
+            }
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            if let Some(value) = params.content_type.as_ref() {
+                request.header("Content-Type", &value.to_string())?;
+            }
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::OK => Ok(VersionedCompositionVersionGetAtTimeOutcome::Ok {
+                    body: answer.json()?,
+                    headers: VersionedCompositionVersionGetAtTimeOkHeaders {
+                        etag: answer.header("ETag"),
+                        location: answer.header("Location"),
+                        content_type: answer.header("Content-Type"),
+                    },
+                }),
+                http::StatusCode::NOT_FOUND => {
+                    Ok(VersionedCompositionVersionGetAtTimeOutcome::NotFound)
+                }
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `GET /ehr/{ehr_id}/versioned_composition/{versioned_object_uid}/version/{version_uid}`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn versioned_composition_version_get_by_id(
+            &self,
+            params: &VersionedCompositionVersionGetByIdParams,
+        ) -> Result<VersionedCompositionVersionGetByIdOutcome, crate::rest::client::ClientError>
+        {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::GET,
+                format!(
+                    "/ehr/{}/versioned_composition/{}/version/{}",
+                    crate::rest::client::path_segment(&params.ehr_id),
+                    crate::rest::client::path_segment(&params.versioned_object_uid),
+                    crate::rest::client::path_segment(&params.version_uid)
+                ),
+            );
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            if let Some(value) = params.content_type.as_ref() {
+                request.header("Content-Type", &value.to_string())?;
+            }
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::OK => Ok(VersionedCompositionVersionGetByIdOutcome::Ok {
+                    body: answer.json()?,
+                    headers: VersionedCompositionVersionGetByIdOkHeaders {
+                        content_type: answer.header("Content-Type"),
+                    },
+                }),
+                http::StatusCode::NOT_FOUND => {
+                    Ok(VersionedCompositionVersionGetByIdOutcome::NotFound)
+                }
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `GET /ehr/{ehr_id}/directory`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn directory_get_at_time(
+            &self,
+            params: &DirectoryGetAtTimeParams,
+        ) -> Result<DirectoryGetAtTimeOutcome, crate::rest::client::ClientError> {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::GET,
+                format!(
+                    "/ehr/{}/directory",
+                    crate::rest::client::path_segment(&params.ehr_id)
+                ),
+            );
+            if let Some(value) = params.version_at_time.as_ref() {
+                request.query("version_at_time", value);
+            }
+            if let Some(value) = params.path.as_ref() {
+                request.query("path", value);
+            }
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::OK => Ok(DirectoryGetAtTimeOutcome::Ok {
+                    body: answer.json()?,
+                    headers: DirectoryGetAtTimeOkHeaders {
+                        content_type: answer.header("Content-Type"),
+                    },
+                }),
+                http::StatusCode::NO_CONTENT => Ok(DirectoryGetAtTimeOutcome::NoContent),
+                http::StatusCode::NOT_FOUND => Ok(DirectoryGetAtTimeOutcome::NotFound),
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `PUT /ehr/{ehr_id}/directory`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn directory_update(
+            &self,
+            params: &DirectoryUpdateParams,
+            body: &openehr_rm::v1_2::common::directory::folder::Folder,
+        ) -> Result<DirectoryUpdateOutcome, crate::rest::client::ClientError> {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::PUT,
+                format!(
+                    "/ehr/{}/directory",
+                    crate::rest::client::path_segment(&params.ehr_id)
+                ),
+            );
+            {
+                let value = &params.if_match;
+                request.header("If-Match", &value.to_string())?;
+            }
+            if let Some(value) = params.prefer.as_ref() {
+                request.header("Prefer", &value.to_string())?;
+            }
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            if let Some(value) = params.content_type.as_ref() {
+                request.header("Content-Type", &value.to_string())?;
+            }
+            request.json_body(body, params.content_type.as_deref())?;
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::OK => Ok(DirectoryUpdateOutcome::Ok {
+                    body: answer.json()?,
+                    headers: DirectoryUpdateOkHeaders {
+                        etag: answer.header("ETag"),
+                        location: answer.header("Location"),
+                        content_type: answer.header("Content-Type"),
+                    },
+                }),
+                http::StatusCode::NO_CONTENT => Ok(DirectoryUpdateOutcome::NoContent {
+                    headers: DirectoryUpdateNoContentHeaders {
+                        etag: answer.header("ETag"),
+                        location: answer.header("Location"),
+                        openehr_item_tag: answer.header_all("openehr-item-tag"),
+                        openehr_version_item_tag: answer.header_all("openehr-version-item-tag"),
+                    },
+                }),
+                http::StatusCode::BAD_REQUEST => Ok(DirectoryUpdateOutcome::BadRequest {
+                    body: answer.optional_json()?,
+                }),
+                http::StatusCode::NOT_FOUND => Ok(DirectoryUpdateOutcome::NotFound),
+                http::StatusCode::PRECONDITION_FAILED => {
+                    Ok(DirectoryUpdateOutcome::PreconditionFailed {
+                        headers: DirectoryUpdatePreconditionFailedHeaders {
+                            etag: answer.header("ETag"),
+                            location: answer.header("Location"),
+                        },
+                    })
+                }
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `POST /ehr/{ehr_id}/directory`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn directory_create(
+            &self,
+            params: &DirectoryCreateParams,
+            body: &openehr_rm::v1_2::common::directory::folder::Folder,
+        ) -> Result<DirectoryCreateOutcome, crate::rest::client::ClientError> {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::POST,
+                format!(
+                    "/ehr/{}/directory",
+                    crate::rest::client::path_segment(&params.ehr_id)
+                ),
+            );
+            if let Some(value) = params.prefer.as_ref() {
+                request.header("Prefer", &value.to_string())?;
+            }
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            if let Some(value) = params.content_type.as_ref() {
+                request.header("Content-Type", &value.to_string())?;
+            }
+            request.json_body(body, params.content_type.as_deref())?;
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::CREATED => Ok(DirectoryCreateOutcome::Created {
+                    body: answer.optional_json()?,
+                    headers: DirectoryCreateCreatedHeaders {
+                        etag: answer.header("ETag"),
+                        location: answer.header("Location"),
+                        content_type: answer.header("Content-Type"),
+                    },
+                }),
+                http::StatusCode::NO_CONTENT => Ok(DirectoryCreateOutcome::NoContent {
+                    headers: DirectoryCreateNoContentHeaders {
+                        etag: answer.header("ETag"),
+                        location: answer.header("Location"),
+                        content_type: answer.header("Content-Type"),
+                    },
+                }),
+                http::StatusCode::BAD_REQUEST => Ok(DirectoryCreateOutcome::BadRequest {
+                    body: answer.optional_json()?,
+                }),
+                http::StatusCode::NOT_FOUND => Ok(DirectoryCreateOutcome::NotFound),
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `DELETE /ehr/{ehr_id}/directory`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn directory_delete(
+            &self,
+            params: &DirectoryDeleteParams,
+        ) -> Result<DirectoryDeleteOutcome, crate::rest::client::ClientError> {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::DELETE,
+                format!(
+                    "/ehr/{}/directory",
+                    crate::rest::client::path_segment(&params.ehr_id)
+                ),
+            );
+            {
+                let value = &params.if_match;
+                request.header("If-Match", &value.to_string())?;
+            }
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::NO_CONTENT => Ok(DirectoryDeleteOutcome::NoContent),
+                http::StatusCode::BAD_REQUEST => Ok(DirectoryDeleteOutcome::BadRequest {
+                    body: answer.optional_json()?,
+                }),
+                http::StatusCode::NOT_FOUND => Ok(DirectoryDeleteOutcome::NotFound),
+                http::StatusCode::PRECONDITION_FAILED => {
+                    Ok(DirectoryDeleteOutcome::PreconditionFailed {
+                        headers: DirectoryDeletePreconditionFailedHeaders {
+                            etag: answer.header("ETag"),
+                            location: answer.header("Location"),
+                        },
+                    })
+                }
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `GET /ehr/{ehr_id}/directory/{version_uid}`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn directory_get_by_version_id(
+            &self,
+            params: &DirectoryGetByVersionIdParams,
+        ) -> Result<DirectoryGetByVersionIdOutcome, crate::rest::client::ClientError> {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::GET,
+                format!(
+                    "/ehr/{}/directory/{}",
+                    crate::rest::client::path_segment(&params.ehr_id),
+                    crate::rest::client::path_segment(&params.version_uid)
+                ),
+            );
+            if let Some(value) = params.path.as_ref() {
+                request.query("path", value);
+            }
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::OK => Ok(DirectoryGetByVersionIdOutcome::Ok {
+                    body: answer.json()?,
+                    headers: DirectoryGetByVersionIdOkHeaders {
+                        content_type: answer.header("Content-Type"),
+                    },
+                }),
+                http::StatusCode::NOT_FOUND => Ok(DirectoryGetByVersionIdOutcome::NotFound),
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `POST /ehr/{ehr_id}/contribution`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn contribution_create(
+            &self,
+            params: &ContributionCreateParams,
+            body: &NewContribution,
+        ) -> Result<ContributionCreateOutcome, crate::rest::client::ClientError> {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::POST,
+                format!(
+                    "/ehr/{}/contribution",
+                    crate::rest::client::path_segment(&params.ehr_id)
+                ),
+            );
+            if let Some(value) = params.prefer.as_ref() {
+                request.header("Prefer", &value.to_string())?;
+            }
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            if let Some(value) = params.content_type.as_ref() {
+                request.header("Content-Type", &value.to_string())?;
+            }
+            request.json_body(body, params.content_type.as_deref())?;
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::CREATED => Ok(ContributionCreateOutcome::Created {
+                    body: answer.optional_json()?,
+                    headers: ContributionCreateCreatedHeaders {
+                        etag: answer.header("ETag"),
+                        location: answer.header("Location"),
+                        content_type: answer.header("Content-Type"),
+                    },
+                }),
+                http::StatusCode::NO_CONTENT => Ok(ContributionCreateOutcome::NoContent {
+                    headers: ContributionCreateNoContentHeaders {
+                        etag: answer.header("ETag"),
+                        location: answer.header("Location"),
+                        content_type: answer.header("Content-Type"),
+                    },
+                }),
+                http::StatusCode::BAD_REQUEST => Ok(ContributionCreateOutcome::BadRequest {
+                    body: answer.optional_json()?,
+                }),
+                http::StatusCode::NOT_FOUND => Ok(ContributionCreateOutcome::NotFound),
+                http::StatusCode::CONFLICT => Ok(ContributionCreateOutcome::Conflict),
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `GET /ehr/{ehr_id}/contribution/{contribution_uid}`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn contribution_get(
+            &self,
+            params: &ContributionGetParams,
+        ) -> Result<ContributionGetOutcome, crate::rest::client::ClientError> {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::GET,
+                format!(
+                    "/ehr/{}/contribution/{}",
+                    crate::rest::client::path_segment(&params.ehr_id),
+                    crate::rest::client::path_segment(&params.contribution_uid)
+                ),
+            );
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::OK => Ok(ContributionGetOutcome::Ok {
+                    body: answer.json()?,
+                    headers: ContributionGetOkHeaders {
+                        content_type: answer.header("Content-Type"),
+                    },
+                }),
+                http::StatusCode::NOT_FOUND => Ok(ContributionGetOutcome::NotFound),
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `GET /ehr/{ehr_id}/tags`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn ehr_tags_get(
+            &self,
+            params: &EhrTagsGetParams,
+        ) -> Result<EhrTagsGetOutcome, crate::rest::client::ClientError> {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::GET,
+                format!(
+                    "/ehr/{}/tags",
+                    crate::rest::client::path_segment(&params.ehr_id)
+                ),
+            );
+            if let Some(value) = params.tag_key.as_ref() {
+                request.query("tag_key", value);
+            }
+            if let Some(value) = params.tag_value.as_ref() {
+                request.query("tag_value", value);
+            }
+            if let Some(value) = params.tag_target_path.as_ref() {
+                request.query("tag_target_path", value);
+            }
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::OK => Ok(EhrTagsGetOutcome::Ok {
+                    body: answer.json()?,
+                    headers: EhrTagsGetOkHeaders {
+                        content_type: answer.header("Content-Type"),
+                    },
+                }),
+                http::StatusCode::BAD_REQUEST => Ok(EhrTagsGetOutcome::BadRequest {
+                    body: answer.optional_json()?,
+                }),
+                http::StatusCode::NOT_FOUND => Ok(EhrTagsGetOutcome::NotFound),
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `GET /ehr/{ehr_id}/composition/{uid_based_id}/tags`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn composition_tags_get(
+            &self,
+            params: &CompositionTagsGetParams,
+        ) -> Result<CompositionTagsGetOutcome, crate::rest::client::ClientError> {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::GET,
+                format!(
+                    "/ehr/{}/composition/{}/tags",
+                    crate::rest::client::path_segment(&params.ehr_id),
+                    crate::rest::client::path_segment(&params.uid_based_id)
+                ),
+            );
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::OK => Ok(CompositionTagsGetOutcome::Ok {
+                    body: answer.json()?,
+                    headers: CompositionTagsGetOkHeaders {
+                        content_type: answer.header("Content-Type"),
+                    },
+                }),
+                http::StatusCode::NOT_FOUND => Ok(CompositionTagsGetOutcome::NotFound),
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `PUT /ehr/{ehr_id}/composition/{uid_based_id}/tags`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn composition_tags_update(
+            &self,
+            params: &CompositionTagsUpdateParams,
+            body: &Vec<super::super::common::UpdateItemTag>,
+        ) -> Result<CompositionTagsUpdateOutcome, crate::rest::client::ClientError> {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::PUT,
+                format!(
+                    "/ehr/{}/composition/{}/tags",
+                    crate::rest::client::path_segment(&params.ehr_id),
+                    crate::rest::client::path_segment(&params.uid_based_id)
+                ),
+            );
+            if let Some(value) = params.prefer.as_ref() {
+                request.header("Prefer", &value.to_string())?;
+            }
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            if let Some(value) = params.content_type.as_ref() {
+                request.header("Content-Type", &value.to_string())?;
+            }
+            request.json_body(body, params.content_type.as_deref())?;
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::OK => Ok(CompositionTagsUpdateOutcome::Ok {
+                    body: answer.json()?,
+                    headers: CompositionTagsUpdateOkHeaders {
+                        content_type: answer.header("Content-Type"),
+                    },
+                }),
+                http::StatusCode::NO_CONTENT => Ok(CompositionTagsUpdateOutcome::NoContent),
+                http::StatusCode::BAD_REQUEST => Ok(CompositionTagsUpdateOutcome::BadRequest {
+                    body: answer.optional_json()?,
+                }),
+                http::StatusCode::NOT_FOUND => Ok(CompositionTagsUpdateOutcome::NotFound),
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `DELETE /ehr/{ehr_id}/composition/{uid_based_id}/tags/{key}`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn composition_tags_delete(
+            &self,
+            params: &CompositionTagsDeleteParams,
+        ) -> Result<CompositionTagsDeleteOutcome, crate::rest::client::ClientError> {
+            let request = crate::rest::client::Request::new(
+                http::Method::DELETE,
+                format!(
+                    "/ehr/{}/composition/{}/tags/{}",
+                    crate::rest::client::path_segment(&params.ehr_id),
+                    crate::rest::client::path_segment(&params.uid_based_id),
+                    crate::rest::client::path_segment(&params.key)
+                ),
+            );
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::NO_CONTENT => Ok(CompositionTagsDeleteOutcome::NoContent),
+                http::StatusCode::NOT_FOUND => Ok(CompositionTagsDeleteOutcome::NotFound),
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `GET /ehr/{ehr_id}/ehr_status/{uid_based_id}/tags`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn ehr_status_tags_get(
+            &self,
+            params: &EhrStatusTagsGetParams,
+        ) -> Result<EhrStatusTagsGetOutcome, crate::rest::client::ClientError> {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::GET,
+                format!(
+                    "/ehr/{}/ehr_status/{}/tags",
+                    crate::rest::client::path_segment(&params.ehr_id),
+                    crate::rest::client::path_segment(&params.uid_based_id)
+                ),
+            );
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::OK => Ok(EhrStatusTagsGetOutcome::Ok {
+                    body: answer.json()?,
+                    headers: EhrStatusTagsGetOkHeaders {
+                        content_type: answer.header("Content-Type"),
+                    },
+                }),
+                http::StatusCode::NOT_FOUND => Ok(EhrStatusTagsGetOutcome::NotFound),
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `PUT /ehr/{ehr_id}/ehr_status/{uid_based_id}/tags`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn ehr_status_tags_update(
+            &self,
+            params: &EhrStatusTagsUpdateParams,
+            body: &Vec<super::super::common::UpdateItemTag>,
+        ) -> Result<EhrStatusTagsUpdateOutcome, crate::rest::client::ClientError> {
+            let mut request = crate::rest::client::Request::new(
+                http::Method::PUT,
+                format!(
+                    "/ehr/{}/ehr_status/{}/tags",
+                    crate::rest::client::path_segment(&params.ehr_id),
+                    crate::rest::client::path_segment(&params.uid_based_id)
+                ),
+            );
+            if let Some(value) = params.prefer.as_ref() {
+                request.header("Prefer", &value.to_string())?;
+            }
+            if let Some(value) = params.accept.as_ref() {
+                request.header("Accept", &value.to_string())?;
+            }
+            if let Some(value) = params.content_type.as_ref() {
+                request.header("Content-Type", &value.to_string())?;
+            }
+            request.json_body(body, params.content_type.as_deref())?;
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::OK => Ok(EhrStatusTagsUpdateOutcome::Ok {
+                    body: answer.json()?,
+                    headers: EhrStatusTagsUpdateOkHeaders {
+                        content_type: answer.header("Content-Type"),
+                    },
+                }),
+                http::StatusCode::NO_CONTENT => Ok(EhrStatusTagsUpdateOutcome::NoContent),
+                http::StatusCode::BAD_REQUEST => Ok(EhrStatusTagsUpdateOutcome::BadRequest {
+                    body: answer.optional_json()?,
+                }),
+                http::StatusCode::NOT_FOUND => Ok(EhrStatusTagsUpdateOutcome::NotFound),
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+
+        /// `DELETE /ehr/{ehr_id}/ehr_status/{uid_based_id}/tags/{key}`
+        ///
+        /// # Errors
+        /// A status the OAS does not document for this operation, a refused
+        /// credential, a service failure, an undecodable body, or a request
+        /// that could not be sent — see [`crate::rest::client::ClientError`].
+        pub async fn ehr_status_tags_delete(
+            &self,
+            params: &EhrStatusTagsDeleteParams,
+        ) -> Result<EhrStatusTagsDeleteOutcome, crate::rest::client::ClientError> {
+            let request = crate::rest::client::Request::new(
+                http::Method::DELETE,
+                format!(
+                    "/ehr/{}/ehr_status/{}/tags/{}",
+                    crate::rest::client::path_segment(&params.ehr_id),
+                    crate::rest::client::path_segment(&params.uid_based_id),
+                    crate::rest::client::path_segment(&params.key)
+                ),
+            );
+            let answer = self.client.execute(request).await?;
+            match answer.status() {
+                http::StatusCode::NO_CONTENT => Ok(EhrStatusTagsDeleteOutcome::NoContent),
+                http::StatusCode::NOT_FOUND => Ok(EhrStatusTagsDeleteOutcome::NotFound),
+                _ => Err(answer.into_undocumented()),
+            }
+        }
+    }
+}
 /// The operations of this group as `(method, path, operation_id)`, for
 /// wiring an axum router in `ferroehr-rest`.
 pub const ROUTES: &[(&str, &str, &str)] = &[

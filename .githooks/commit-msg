@@ -30,14 +30,26 @@ strip_patterns=(
   'Anthropic[[:space:]]+Claude'
 )
 
-tmp="$(mktemp)"
-cp "$MSG_FILE" "$tmp"
+# The one co-author line a `[bot]` pattern above would delete that is not AI
+# attribution: GitHub's squash merge of a Dependabot pull request writes it,
+# naming the dependency updater. The `no attribution in commits` CI job
+# excludes the same line, so the hook and the guard agree about it.
+keep_pattern='^[[:space:]]*Co-authored-by: dependabot\[bot\] <[0-9]+\+dependabot\[bot\]@users\.noreply\.github\.com>[[:space:]]*$'
 
-for pat in "${strip_patterns[@]}"; do
-  # Delete any line matching the pattern (case-insensitive).
-  grep -viE "$pat" "$tmp" > "$tmp.next" || true
-  mv "$tmp.next" "$tmp"
-done
+tmp="$(mktemp)"
+
+# Delete every line matching a strip pattern (case-insensitive), unless it is
+# the kept Dependabot line.
+shopt -s nocasematch
+while IFS= read -r line || [[ -n "$line" ]]; do
+  if [[ ! "$line" =~ $keep_pattern ]]; then
+    for pat in "${strip_patterns[@]}"; do
+      [[ "$line" =~ $pat ]] && continue 2
+    done
+  fi
+  printf '%s\n' "$line"
+done <"$MSG_FILE" >"$tmp"
+shopt -u nocasematch
 
 # Collapse 3+ consecutive blank lines into one, and trim trailing blank lines,
 # so removing a footer block does not leave an ugly gap.
@@ -48,5 +60,5 @@ awk 'BEGIN{blank=0}
 # Remove trailing blank lines entirely.
 sed -e :a -e '/^\n*$/{$d;N;ba}' "$tmp.clean" > "$MSG_FILE" 2>/dev/null || cp "$tmp.clean" "$MSG_FILE"
 
-rm -f "$tmp" "$tmp.clean" "$tmp.next" 2>/dev/null || true
+rm -f "$tmp" "$tmp.clean" 2>/dev/null || true
 exit 0

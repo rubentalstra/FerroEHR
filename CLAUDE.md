@@ -83,7 +83,7 @@ Discipline unchanged: subagents still obey the hard rules below (never hand-edit
 
 ## Tech stack (pinned)
 
-Toolchain: Rust stable **1.96** (1.96.1), MSRV 1.96, **edition 2024**, resolver v3. Pin via `rust-toolchain.toml`.
+Toolchain: Rust stable **1.98** (1.98.1), MSRV 1.97, **edition 2024**, resolver v3. Pin via `rust-toolchain.toml`.
 Database: **PostgreSQL 18** (target 18.6+): `uuidv7()`, the temporal `WITHOUT OVERLAPS` key on `linkage.subject_ehr`, the SQL/JSON path functions, and the planner-side gains (skip scan, AIO); `docs/postgres-features.md` says which features the code uses and which are available and deliberately not. Extension: `btree_gist` alone, which `db::prepare` installs itself.
 
 **The authoritative, fully-pinned dependency set lives in the root `Cargo.toml` `[workspace.dependencies]`, and every entry there is CONSUMED by a member** (#2815: 44 orphaned pins were deleted — an unconsumed pin is dependabot churn nobody exercises; a deliberately staged entry needs a `# TODO(#NNNN)`). The narrative below is therefore a MENU, not a manifest mirror: it names both the pinned set and the vetted candidates to reach for (do not hand-roll anything a crate here provides — auth, HTTP status codes, OpenAPI/Swagger, etc.). A listed crate missing from the workspace table is re-added on first consumption, version verified on crates.io/docs.rs at that moment (versions below are as of 2026-07 and items marked *(verify)* were never confirmed). Add a crate to a member with `dep.workspace = true`.

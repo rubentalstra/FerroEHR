@@ -422,8 +422,14 @@ jobs:
           # Handle first-push / shallow edge cases.
           git rev-parse "${base:-HEAD~1}" >/dev/null 2>&1 || range="HEAD"
           echo "Scanning range: $range"
+          # `[bot]` catches an automation co-author, with one exception:
+          # GitHub's squash merge of a Dependabot pull request writes
+          # `Co-authored-by: dependabot[bot] <…>`, which names a dependency
+          # updater, not an AI author. The hook in .githooks/commit-msg keeps
+          # that same line, so the two guards agree.
           if git log --format='%B' "$range" 2>/dev/null | grep -iEn \
-             'co-authored-by:.*(claude|anthropic|\[bot\])|generated[[:space:]]+(with|by)[[:space:]]+.*claude|claude[[:space:]]+code|🤖|assisted-by:.*claude'; then
+             'co-authored-by:.*(claude|anthropic|\[bot\])|generated[[:space:]]+(with|by)[[:space:]]+.*claude|claude[[:space:]]+code|🤖|assisted-by:.*claude' \
+             | grep -viE '^[0-9]+:[[:space:]]*co-authored-by: dependabot\[bot\] <[0-9]+\+dependabot\[bot\]@users\.noreply\.github\.com>[[:space:]]*$'; then
             echo "::error::Commit message contains AI/Claude attribution. Remove it (see project hard rules)."
             exit 1
           fi
@@ -748,6 +754,14 @@ jobs:
           yq --version
       - name: The declarations, the texts and the chapter agree
         run: bash scripts/checks/licensing-declarations.sh
+      # The six Apache-2.0 crates publish so any project can take them; a
+      # normal or build dependency on one of the three BUSL-1.1 crates would
+      # make every consumer compile BUSL code. The self-test runs first, so a
+      # detector that stopped matching fails here instead of passing vacuously.
+      - name: The licence-boundary detector refuses every crossing
+        run: bash scripts/checks/licence-boundary.sh --self-test
+      - name: No Apache-2.0 crate depends on a BUSL-1.1 crate
+        run: bash scripts/checks/licence-boundary.sh
       # `reuse lint` is satisfied by the glob declaration alone, so it cannot
       # see a first-party file losing the header that makes its licensing
       # travel. This is the check that can.
@@ -1192,9 +1206,11 @@ jobs:
   # ── openehr-its + openehr-sdt on wasm32: the browser-consumer selection ────
   # `openehr-its` publishes a feature graph whose openEHR content layers
   # (`json` → `xml` → `opt14`) are meant to compile for a browser client, while
-  # `schema-validation` (jsonschema) and `rest-server` (axum) deliberately do
-  # not; `openehr-sdt` adds the Simplified Formats (`flat`) on top and keeps
-  # the dependency-free `smart_scopes` island under `default-features = false`.
+  # `schema-validation` (jsonschema) and the three ITS-REST features (`rest`,
+  # `rest-server` with axum, `rest-client` with reqwest) are not part of that
+  # selection (the lane after this one clippies them natively); `openehr-sdt`
+  # adds the Simplified Formats (`flat`) on top and keeps the dependency-free
+  # `smart_scopes` island under `default-features = false`.
   # Nothing else in CI compiles those selections: the clippy job runs
   # --all-features, and the viewer's wasm lane takes the crates with
   # default-features = false, which reaches only the scope-grammar island. So
@@ -1231,6 +1247,64 @@ jobs:
       # The island the manifest promises a scope-parsing client: no feature, no
       # dependency, and it must still compile for the browser on its own.
       - run: cargo clippy --locked -p openehr-sdt --target wasm32-unknown-unknown --no-default-features -- -D warnings
+
+  # ── openehr-its: the three ITS-REST features, each on its own ──────────────
+  # `rest` is the contract both halves share (DTOs, param structs, route tables,
+  # `ApiError`) over serde and `http`; `rest-server` adds the server traits and
+  # `axum`; `rest-client` adds the generated clients and `reqwest`. The clippy
+  # job compiles them only together (--all-features), where a gate missing from
+  # one half is masked by the other, and the wasm lane compiles none of them. So
+  # each feature is clippied alone, and the dependency split the manifest
+  # promises is read back from `cargo tree`: a contract-only consumer builds
+  # neither HTTP engine, and a client builds no server framework.
+  #
+  # Library target only, no --all-targets: the crate's dev-dependencies pull
+  # every feature in through the test suite and would hide the property.
+  its-rest-features:
+    name: clippy (openehr-its REST features)
+    needs: changes
+    # The feature selections ARE the test, and they are declared here (#2373).
+    if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflows == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # rust-cache, for the reason the clippy job states: sccache cannot cache
+      # clippy-driver invocations (mozilla/sccache#539). Its own cache entry:
+      # this target dir holds three single-feature builds of one crate.
+      - uses: actions-rust-lang/setup-rust-toolchain@ecabd13d1c56bd1345c230e542e9144811ad706f # v2.0.0
+        with:
+          components: clippy
+          cache-save-if: ${{ github.ref == 'refs/heads/main' }}
+      - run: cargo clippy --locked -p openehr-its --no-default-features --features rest -- -D warnings
+      - run: cargo clippy --locked -p openehr-its --no-default-features --features rest-client -- -D warnings
+      - run: cargo clippy --locked -p openehr-its --no-default-features --features rest-server -- -D warnings
+      - name: The contract pulls no HTTP engine, the client no server framework
+        shell: bash
+        # A tree line names a package as `<name> v<version>`, so the leading
+        # space and the trailing ` v` keep `axum-core` and the like from
+        # matching a banned name.
+        env:
+          CONTRACT_BANNED: axum|reqwest
+          CLIENT_BANNED: axum
+        run: |
+          set -euo pipefail
+          refuse() {
+            local feature="$1" banned="$2" tree found
+            tree="$(cargo tree --locked -p openehr-its --no-default-features --features "$feature" -e normal)"
+            if found="$(grep -E "[[:space:]]($banned) v[0-9]" <<<"$tree")"; then
+              echo "::error::openehr-its --features $feature depends on a package it must not pull:"
+              printf '%s\n' "$found"
+              return 1
+            fi
+            echo "OK: --features $feature pulls none of: $banned"
+          }
+          refuse rest "$CONTRACT_BANNED"
+          refuse rest-client "$CLIENT_BANNED"
 
   # ── Rustdoc: intra-doc links + doc lints are inert unless rustdoc runs ──────
   # [workspace.lints.rustdoc] levels apply to every `cargo doc`; the -D
@@ -2597,6 +2671,7 @@ jobs:
       - clippy
       - feature-combos
       - its-wasm
+      - its-rest-features
       - doc
       - msrv
       - codegen-drift
